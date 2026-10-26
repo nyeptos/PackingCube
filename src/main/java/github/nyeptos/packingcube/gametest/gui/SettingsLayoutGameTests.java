@@ -1,9 +1,9 @@
-package github.nyeptos.packingcube.gametest;
+package github.nyeptos.packingcube.gametest.gui;
 
 import github.nyeptos.packingcube.Packingcube;
-import github.nyeptos.packingcube.bag.BagFilter;
-import github.nyeptos.packingcube.gui.BagSettingsLayout;
-import github.nyeptos.packingcube.gui.FilterEditorState;
+import github.nyeptos.packingcube.bag.filter.BagFilter;
+import github.nyeptos.packingcube.gui.layout.BagSettingsLayout;
+import github.nyeptos.packingcube.gui.input.FilterEditorState;
 
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -180,7 +180,7 @@ public final class SettingsLayoutGameTests {
                     layout.viewport().bottom() <= layout.height(),
                     h,
                     "Viewport fits settings height");
-            var scroll = new github.nyeptos.packingcube.gui.SettingsScrollState();
+            var scroll = new github.nyeptos.packingcube.gui.input.SettingsScrollState();
             scroll.configure(layout.viewport().height(), layout.content().height());
             check(
                     scroll.scrollable() == (screenHeight < 381),
