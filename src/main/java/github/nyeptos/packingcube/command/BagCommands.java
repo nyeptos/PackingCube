@@ -1,8 +1,9 @@
 package github.nyeptos.packingcube.command;
 
+
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
-import github.nyeptos.packingcube.bag.BagFilter;
+import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -52,7 +53,37 @@ public final class BagCommands {
                                                 source.getEntity()
                                                         instanceof
                                                         net.minecraft.server.level.ServerPlayer)
-                                .then(filter));
+                                .then(filter)
+                                .then(
+                                        Commands.literal("refillstatus")
+                                                .executes(ctx -> refillStatus(ctx.getSource()))));
+    }
+
+    private static int refillStatus(CommandSourceStack source) throws CommandSyntaxException {
+        var player = source.getPlayerOrException();
+        for (int slot :
+                new int[] {
+                    player.getInventory().selected,
+                    github.nyeptos.packingcube.bag.refill.RefillSettings.OFFHAND_SLOT
+                }) {
+            var hand =
+                    Component.translatable(
+                            "gui.packingcube."
+                                    + (slot == 40
+                                            ? "refill_status_offhand"
+                                            : "refill_status_main"));
+            var reason =
+                    Component.translatable(
+                            "gui.packingcube.refill_status_"
+                                    + github.nyeptos.packingcube.bag.refill.RefillDiagnostics
+                                            .reason(player, slot));
+            source.sendSuccess(
+                    () ->
+                            Component.translatable(
+                                    "gui.packingcube.refill_status_line", hand, reason),
+                    false);
+        }
+        return 1;
     }
 
     private static ItemStack heldBag(CommandSourceStack source) throws CommandSyntaxException {

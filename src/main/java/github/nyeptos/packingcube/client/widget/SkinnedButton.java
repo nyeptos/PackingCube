@@ -1,9 +1,9 @@
 package github.nyeptos.packingcube.client.widget;
 
-import github.nyeptos.packingcube.gui.ButtonAnimation;
-import github.nyeptos.packingcube.gui.ButtonHoverState;
-import github.nyeptos.packingcube.gui.GuiSurface;
-import github.nyeptos.packingcube.gui.WidgetSkin;
+import github.nyeptos.packingcube.gui.animation.ButtonAnimation;
+import github.nyeptos.packingcube.gui.animation.ButtonHoverState;
+import github.nyeptos.packingcube.gui.skin.GuiSurface;
+import github.nyeptos.packingcube.gui.skin.WidgetSkin;
 
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -22,8 +22,38 @@ public final class SkinnedButton extends Button {
     }
 
     private final Style style;
-    private final ButtonAnimation animation = new ButtonAnimation();
-    private final ButtonHoverState hoverState = new ButtonHoverState();
+
+    public record Feedback(ButtonAnimation animation, ButtonHoverState hover) {}
+
+    private Feedback feedback = new Feedback(new ButtonAnimation(), new ButtonHoverState());
+    private boolean pointerHeld;
+
+    public String feedbackStyle() {
+        return style.name();
+    }
+
+    public Feedback feedback() {
+        return feedback;
+    }
+
+    public void feedback(Feedback value) {
+        feedback = value;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (active && visible && isValidClickButton(button) && isMouseOver(mouseX, mouseY))
+            pointerHeld = true;
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public void onRelease(double mouseX, double mouseY) {
+        if (pointerHeld) feedback.animation().press(Util.getMillis());
+        pointerHeld = false;
+        super.onRelease(mouseX, mouseY);
+    }
+
     private BooleanSupplier selected = () -> false;
 
     public SkinnedButton(Button.Builder builder) {
@@ -49,8 +79,13 @@ public final class SkinnedButton extends Button {
     }
 
     @Override
+    public void playDownSound(net.minecraft.client.sounds.SoundManager ignored) {
+        UiInteractionSounds.grab();
+    }
+
+    @Override
     public void onPress() {
-        animation.press(Util.getMillis());
+        feedback.animation().press(Util.getMillis());
         // A selected tab still animates, but must not reset the current page when clicked again.
         if (style == Style.COMMON && selected.getAsBoolean()) return;
         super.onPress();
@@ -58,20 +93,30 @@ public final class SkinnedButton extends Button {
 
     /** A scroll-clipped widget cannot keep a stale pointer entry across reappearance. */
     public void suspendHover() {
-        hoverState.reset();
-        animation.sample(Util.getMillis(), false, active);
+        feedback.hover().reset();
+        feedback.animation().sample(Util.getMillis(), false, active);
     }
 
     @Override
     protected void renderWidget(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         var minecraft = Minecraft.getInstance();
         var feedback =
-                hoverState.update(
-                        active,
-                        isHovered(),
-                        isFocused(),
-                        minecraft.getLastInputType().isKeyboard());
+                this.feedback
+                        .hover()
+                        .update(
+                                active,
+                                isMouseOver(mouseX, mouseY),
+                                isFocused(),
+                                minecraft.getLastInputType().isKeyboard());
         boolean on = selected.getAsBoolean(), hovered = feedback.highlighted();
+        long now = Util.getMillis();
+        if (!active
+                || org.lwjgl.glfw.GLFW.glfwGetMouseButton(
+                                minecraft.getWindow().getWindow(),
+                                org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_LEFT)
+                        != org.lwjgl.glfw.GLFW.GLFW_PRESS) pointerHeld = false;
+        var frame = this.feedback.animation().sample(now, hovered, active, pointerHeld);
+        boolean pressed = active && (pointerHeld || this.feedback.animation().pressing(now));
         if (feedback.playSound()) UiInteractionSounds.hover();
         WidgetSkin skin =
                 switch (style) {
@@ -79,16 +124,22 @@ public final class SkinnedButton extends Button {
                     case TOGGLE -> WidgetSkin.toggle(on, active, hovered);
                     case COMMON -> WidgetSkin.button(active, on, hovered);
                 };
+        String overrideFile =
+                pressed
+                        ? skin.pressedFileName()
+                        : style == Style.COMMON && hovered && !on ? "button_hovered.png" : null;
+        WidgetSkin drawSkin = pressed ? skin.pressedFallback() : skin;
         ButtonAnimationRenderer.draw(
                 g,
-                animation.sample(Util.getMillis(), hovered, active),
+                frame,
                 getX(),
                 getY(),
                 getWidth(),
                 getHeight(),
                 () -> {
                     g.setColor(1, 1, 1, alpha);
-                    WidgetTextures.draw(g, skin, getX(), getY(), getWidth(), getHeight());
+                    WidgetTextures.drawButton(
+                            g, drawSkin, overrideFile, getX(), getY(), getWidth(), getHeight());
                     g.setColor(1, 1, 1, 1);
                     if (style != Style.CLOSE) {
                         int color = GuiSurface.TEXT_COLOR;

@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.event;
 
-import github.nyeptos.packingcube.bag.BagRouter;
+import github.nyeptos.packingcube.bag.pickup.BagRouter;
 
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.item.ItemEntity;

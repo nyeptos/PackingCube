@@ -1,16 +1,16 @@
 package github.nyeptos.packingcube.client;
 
-import github.nyeptos.packingcube.bag.BagKeyActions;
-import github.nyeptos.packingcube.bag.RadialGeometry;
-import github.nyeptos.packingcube.bag.RadialKeyState;
-import github.nyeptos.packingcube.bag.RadialSelectionFeedback;
+import github.nyeptos.packingcube.bag.input.BagKeyActions;
+import github.nyeptos.packingcube.bag.radial.RadialGeometry;
+import github.nyeptos.packingcube.bag.radial.RadialKeyState;
+import github.nyeptos.packingcube.bag.radial.RadialSelectionFeedback;
 import github.nyeptos.packingcube.client.widget.ButtonAnimationRenderer;
 import github.nyeptos.packingcube.client.widget.WidgetTextures;
-import github.nyeptos.packingcube.gui.ButtonAnimation;
-import github.nyeptos.packingcube.gui.GuiSurface;
-import github.nyeptos.packingcube.gui.RadialLayout;
-import github.nyeptos.packingcube.gui.RadialSlotSkin;
-import github.nyeptos.packingcube.gui.WidgetSkin;
+import github.nyeptos.packingcube.gui.animation.ButtonAnimation;
+import github.nyeptos.packingcube.gui.layout.RadialLayout;
+import github.nyeptos.packingcube.gui.skin.GuiSurface;
+import github.nyeptos.packingcube.gui.skin.RadialSlotSkin;
+import github.nyeptos.packingcube.gui.skin.WidgetSkin;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
 import github.nyeptos.packingcube.network.RadialSelectPayload;
 

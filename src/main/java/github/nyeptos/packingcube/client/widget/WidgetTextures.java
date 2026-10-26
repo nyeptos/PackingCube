@@ -2,10 +2,10 @@ package github.nyeptos.packingcube.client.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import github.nyeptos.packingcube.gui.GuiSurface;
-import github.nyeptos.packingcube.gui.NineSliceAxis;
-import github.nyeptos.packingcube.gui.RadialSlotSkin;
-import github.nyeptos.packingcube.gui.WidgetSkin;
+import github.nyeptos.packingcube.gui.skin.GuiSurface;
+import github.nyeptos.packingcube.gui.skin.NineSliceAxis;
+import github.nyeptos.packingcube.gui.skin.RadialSlotSkin;
+import github.nyeptos.packingcube.gui.skin.WidgetSkin;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
@@ -73,6 +73,40 @@ public final class WidgetTextures {
                 height);
     }
 
+    /** Optional artist variants are resolved live, so resource reload never keeps a stale miss. */
+    public static void drawButton(
+            GuiGraphics g,
+            WidgetSkin skin,
+            String overrideFile,
+            int x,
+            int y,
+            int width,
+            int height) {
+        if (overrideFile != null) {
+            ResourceLocation texture =
+                    ResourceLocation.fromNamespaceAndPath(
+                            "packingcube", "textures/gui/widgets/" + overrideFile);
+            if (net.minecraft.client.Minecraft.getInstance()
+                    .getResourceManager()
+                    .getResource(texture)
+                    .isPresent()) {
+                draw(
+                        g,
+                        texture,
+                        skin.width,
+                        skin.height,
+                        skin.borderX,
+                        skin.borderY,
+                        x,
+                        y,
+                        width,
+                        height);
+                return;
+            }
+        }
+        draw(g, skin, x, y, width, height);
+    }
+
     public static void draw(GuiGraphics g, WidgetSkin skin, int x, int y, int width, int height) {
         draw(
                 g,
@@ -87,7 +121,7 @@ public final class WidgetTextures {
                 height);
     }
 
-    private static void draw(
+    public static void draw(
             GuiGraphics g,
             ResourceLocation texture,
             int sourceWidth,

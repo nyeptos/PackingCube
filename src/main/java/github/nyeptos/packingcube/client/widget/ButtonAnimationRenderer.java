@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.client.widget;
 
-import github.nyeptos.packingcube.gui.ButtonAnimation;
+import github.nyeptos.packingcube.gui.animation.ButtonAnimation;
 
 import net.minecraft.client.gui.GuiGraphics;
 

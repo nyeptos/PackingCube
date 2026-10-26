@@ -5,6 +5,7 @@ import com.mojang.authlib.GameProfile;
 import github.nyeptos.packingcube.Packingcube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.EquippedBagAccess;
+import github.nyeptos.packingcube.bag.refill.RefillSettings;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.menu.BagMenuOpener;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
@@ -14,6 +15,7 @@ import github.nyeptos.packingcube.registry.ModItems;
 import github.nyeptos.packingcube.registry.ModMenus;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -109,6 +111,11 @@ public final class MaintenanceGameTests {
                 BuiltInRegistries.ITEM.getKey(ModItems.FILTER_BAG.get()).equals(id("filter_bag")),
                 "Filter Bag ID unchanged");
         helper.assertTrue(
+                BuiltInRegistries.ITEM
+                        .getKey(ModItems.REFILL_POUCH.get())
+                        .equals(id("refill_pouch")),
+                "Refill pouch ID unchanged");
+        helper.assertTrue(
                 BuiltInRegistries.MENU.getKey(ModMenus.BAG_MENU.get()).equals(id("bag")),
                 "Storage menu ID unchanged");
         helper.assertTrue(
@@ -128,6 +135,25 @@ public final class MaintenanceGameTests {
                         && FilterActions.SET_MODE == 3
                         && FilterActions.SAMPLE_CURSOR == 4,
                 "Existing filter wire IDs unchanged");
+        helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void registryDefaultsRemainUnchanged(GameTestHelper helper) {
+        for (var item :
+                java.util.List.of(ModItems.LARGE_BAG, ModItems.FILTER_BAG, ModItems.REFILL_POUCH)) {
+            helper.assertTrue(
+                    item.get().getDefaultInstance().getMaxStackSize() == 1,
+                    "All bags remain unstackable");
+        }
+        helper.assertTrue(
+                RefillSettings.defaults()
+                        .equals(
+                                ModItems.REFILL_POUCH
+                                        .get()
+                                        .getDefaultInstance()
+                                        .get(DataComponents.CUSTOM_DATA)),
+                "Refill pouch keeps its default custom data");
         helper.succeed();
     }
 

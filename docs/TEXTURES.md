@@ -77,3 +77,22 @@ WidgetTexturesはraw PNGを描く直前に先行fill/textバッチをflushし、
 
 ## PC-39 動きの追加
 追加画像は不要。既存ボタン/ラジアル枠・文字・アイコンをまとめてホバー時に1px浮かせ、押下時に短く縮小・沈下させる。画像状態差分は従来どおり、PNGの色や透過は変更しない。通常ボタンのホバー画像はPC-40でbutton_selected_hovered.pngの共用へ変更。
+
+## PC-43 補充ポーチ
+textures/item/refill_pouch.png（16×16、受領原本）をアイテム・ラジアルで共用。generated models/item/refill_pouch.jsonがpackingcube:item/refill_pouchを参照する。枠・ボタン・設定背景の新規PNGは不要。既存画像・モデルは変更しない。
+
+## PC-46 destination selection assets
+
+All files below are artist-supplied; no changes to existing models or item PNGs.
+Under `assets/packingcube/textures/gui/`:
+
+| File | Pixels | Use |
+|---|---|---|
+| equipment_panel.png | 26×98 | Right, at inventory origin +(180,30). Five slot origins +(4,4+18n). |
+| curios_panel.png | 26×98 | Left, 4px gap; width34 when scrollbar needed, border3 nine-slice. |
+| refill_target_selected.png | 18×18 | Cyan persistent selection overlay. |
+| refill_target_hovered.png | 18×18 | White hover overlay; opacity transition, no scaling. |
+| refill_target_pressed.png | 18×18 | Dark held-click overlay, blended with selected indication. |
+
+Icons for armor/offhand come from the vanilla block atlas. Curios icons come from each
+registered slot type and only appear when empty; item rendering uses normal item models.

@@ -11,5 +11,12 @@ public final class FilterActions {
     public static final int SET_PICKUP_ENABLED = 5;
     public static final int SET_PICKUP_PRIORITY = 6;
 
+    public static final int SET_HOTBAR_REFILL = 7;
+    public static final int SET_TRADE_REFILL = 8;
+    public static final int SET_REFILL_OPTION = 9;
+    public static final int SET_REFILL_TARGET = 10;
+
+    public static final int SET_REFILL_SOURCE = 11;
+
     private FilterActions() {}
 }

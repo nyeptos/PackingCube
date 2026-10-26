@@ -1,8 +1,10 @@
 package github.nyeptos.packingcube.item;
 
-import github.nyeptos.packingcube.bag.BagFilterTooltip;
 import github.nyeptos.packingcube.bag.BagInventory;
+import github.nyeptos.packingcube.bag.filter.BagFilterTooltip;
+import github.nyeptos.packingcube.bag.refill.RefillSettings;
 import github.nyeptos.packingcube.menu.BagMenuOpener;
+import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
@@ -28,6 +30,34 @@ public final class BagItem extends Item {
             ItemStack stack, Item.TooltipContext context, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, context, lines, flag);
         if (!modules) BagFilterTooltip.append(stack, lines);
+        if (stack.is(ModItems.REFILL_POUCH.get())) {
+            lines.add(Component.translatable("tooltip.packingcube.refill_supply"));
+            lines.add(Component.translatable("tooltip.packingcube.refill_trade_note"));
+            lines.add(
+                    Component.translatable(
+                            "gui.packingcube.refill_offhand_"
+                                    + (RefillSettings.offhandEnabled(stack) ? "on" : "off")));
+            lines.add(
+                    Component.translatable(
+                            "gui.packingcube.refill_timing",
+                            Component.translatable(
+                                    "gui.packingcube.refill_timing_"
+                                            + RefillSettings.timing(stack))));
+            lines.add(
+                    Component.translatable(
+                            "gui.packingcube.refill_target",
+                            RefillSettings.target(stack) == 0
+                                    ? Component.translatable("gui.packingcube.refill_full_stack")
+                                    : RefillSettings.target(stack)));
+            lines.add(
+                    Component.translatable(
+                            "gui.packingcube.refill_hotbar_"
+                                    + (RefillSettings.enabled(stack, false) ? "on" : "off")));
+            lines.add(
+                    Component.translatable(
+                            "gui.packingcube.refill_trade_"
+                                    + (RefillSettings.enabled(stack, true) ? "on" : "off")));
+        }
     }
 
     @Override

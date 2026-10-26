@@ -1,9 +1,14 @@
 package github.nyeptos.packingcube.menu;
 
-import github.nyeptos.packingcube.bag.BagFilter;
 import github.nyeptos.packingcube.bag.BagIdentity;
 import github.nyeptos.packingcube.bag.BagInventory;
-import github.nyeptos.packingcube.bag.BagPickupSettings;
+import github.nyeptos.packingcube.bag.filter.BagFilter;
+import github.nyeptos.packingcube.bag.pickup.BagPickupSettings;
+import github.nyeptos.packingcube.bag.pickup.BagRouter;
+import github.nyeptos.packingcube.bag.refill.RefillSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillTargets;
+import github.nyeptos.packingcube.compat.BagEquipment;
 import github.nyeptos.packingcube.network.FilterActions;
 import github.nyeptos.packingcube.registry.ModItems;
 import github.nyeptos.packingcube.registry.ModMenus;
@@ -23,6 +28,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /** Identical slot rules on client and server; persistence and menu opening are server-only. */
@@ -35,13 +42,67 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
     private final int ownerSlot;
     private final int bagSlots;
     private final boolean modules;
+    private final boolean refill;
+    private final List<BagEquipment.Target> curiosTargets;
+    private final List<String> sideIds = new ArrayList<>();
+    private int sideStart;
+    private static final int[] EQUIPMENT_INDICES = {39, 38, 37, 36, 40};
+
+    public List<BagEquipment.Target> curiosTargets() {
+        return curiosTargets;
+    }
+
+    public Slot sideSlot(String id) {
+        int index = sideIds.indexOf(id);
+        return index < 0 ? null : slots.get(sideStart + index);
+    }
+
+    public boolean isSideSlot(int index) {
+        return index >= sideStart && index < slots.size();
+    }
+
+    public static void writeCuriosTargets(
+            RegistryFriendlyByteBuf data, List<BagEquipment.Target> targets) {
+        data.writeVarInt(targets.size());
+        for (var target : targets) {
+            data.writeUtf(target.id(), 256);
+            data.writeResourceLocation(target.icon());
+        }
+    }
+
+    private static List<BagEquipment.Target> readCuriosTargets(RegistryFriendlyByteBuf data) {
+        int count = data.readVarInt();
+        if (count < 0 || count > 4096)
+            throw new IllegalArgumentException("Invalid Curios slot count");
+        List<BagEquipment.Target> targets = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            String id = data.readUtf(256);
+            if (!RefillTargets.valid(id)
+                    || !id.startsWith("curios:")
+                    || targets.stream().anyMatch(t -> t.id().equals(id)))
+                throw new IllegalArgumentException("Invalid Curios slot ID");
+            targets.add(new BagEquipment.Target(id, data.readResourceLocation(), ItemStack.EMPTY));
+        }
+        return List.copyOf(targets);
+    }
+
     // Read-only synchronization slots: settings snapshot and one ghost sample.
     private final SimpleContainer editorState = new SimpleContainer(2);
 
     public static BagMenu fromNetwork(int id, Inventory inventory, RegistryFriendlyByteBuf data) {
         int ownerSlot = data.readVarInt();
         boolean modules = data.readBoolean();
-        return clientMenu(id, inventory, ownerSlot, modules);
+        return new BagMenu(
+                id,
+                inventory,
+                new SimpleContainer(
+                        modules ? BagInventory.MODULE_SLOTS : BagInventory.FILTER_SLOTS),
+                ItemStack.EMPTY,
+                ownerSlot,
+                modules,
+                data.readBoolean(),
+                readCuriosTargets(data),
+                true);
     }
 
     /** Client menu uses temporary storage, never the held item's persistent data. */
@@ -63,7 +124,49 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
             ItemStack root,
             int ownerSlot,
             boolean modules) {
+        this(
+                id,
+                inventory,
+                contents,
+                root,
+                ownerSlot,
+                modules,
+                contents instanceof BagInventory storage
+                        && storage.bagStack().is(ModItems.REFILL_POUCH.get()));
+    }
+
+    private BagMenu(
+            int id,
+            Inventory inventory,
+            Container contents,
+            ItemStack root,
+            int ownerSlot,
+            boolean modules,
+            boolean refill) {
+        this(
+                id,
+                inventory,
+                contents,
+                root,
+                ownerSlot,
+                modules,
+                refill,
+                BagEquipment.refillTargets(inventory.player),
+                inventory.player.level().isClientSide);
+    }
+
+    public BagMenu(
+            int id,
+            Inventory inventory,
+            Container contents,
+            ItemStack root,
+            int ownerSlot,
+            boolean modules,
+            boolean refill,
+            List<BagEquipment.Target> curiosTargets,
+            boolean clientMirror) {
         super(ModMenus.BAG_MENU.get(), id);
+        this.curiosTargets = List.copyOf(curiosTargets);
         this.contents = contents;
         this.root = root;
         this.rootId = root.isEmpty() ? null : BagIdentity.renew(root);
@@ -71,6 +174,7 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         this.rootStorage = contents instanceof BagInventory storage ? storage.rootView() : null;
         this.ownerSlot = ownerSlot;
         this.modules = modules;
+        this.refill = refill;
         this.bagSlots = contents.getContainerSize();
         int rows = bagSlots / 9;
         for (int row = 0; row < rows; row++) {
@@ -80,7 +184,9 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
                             @Override
                             public boolean mayPlace(ItemStack stack) {
                                 return BagInventory.accepts(modules, stack)
-                                        && (modules || BagFilter.matches(filterSnapshot(), stack));
+                                        && (modules
+                                                || refill
+                                                || BagFilter.matches(filterSnapshot(), stack));
                             }
                         });
             }
@@ -113,6 +219,81 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
                         }
                     });
         }
+        sideStart = slots.size();
+        for (int index : EQUIPMENT_INDICES) {
+            int vanillaIndex = index < 40 ? 44 - index : 45;
+            var vanilla = inventory.player.inventoryMenu.getSlot(vanillaIndex);
+            sideIds.add(RefillTargets.inventory(index));
+            addSlot(
+                    new Slot(inventory, index, -10000, -10000) {
+                        @Override
+                        public boolean isActive() {
+                            return false;
+                        }
+
+                        @Override
+                        public boolean mayPlace(ItemStack stack) {
+                            return vanilla.mayPlace(stack);
+                        }
+
+                        @Override
+                        public boolean mayPickup(Player actor) {
+                            return vanilla.mayPickup(actor);
+                        }
+
+                        @Override
+                        public int getMaxStackSize(ItemStack stack) {
+                            return vanilla.getMaxStackSize(stack);
+                        }
+
+                        @Override
+                        public int getMaxStackSize() {
+                            return index < 40 ? 1 : 64;
+                        }
+
+                        @Override
+                        public void setByPlayer(ItemStack stack, ItemStack oldStack) {
+                            vanilla.setByPlayer(stack, oldStack);
+                        }
+                    });
+        }
+        for (var target : this.curiosTargets) {
+            sideIds.add(target.id());
+            Slot slot =
+                    clientMirror ? null : BagEquipment.equipmentSlot(inventory.player, target.id());
+            if (slot == null)
+                slot =
+                        new Slot(new SimpleContainer(1), 0, -10000, -10000) {
+                            @Override
+                            public boolean isActive() {
+                                return false;
+                            }
+
+                            @Override
+                            public boolean mayPlace(ItemStack stack) {
+                                var destination =
+                                        BagEquipment.refillDestination(
+                                                inventory.player, target.id());
+                                return destination != null && destination.accepts(stack);
+                            }
+
+                            @Override
+                            public boolean mayPickup(Player actor) {
+                                var destination =
+                                        BagEquipment.refillDestination(actor, target.id());
+                                return destination != null && destination.removable();
+                            }
+
+                            @Override
+                            public int getMaxStackSize(ItemStack stack) {
+                                var destination =
+                                        BagEquipment.refillDestination(
+                                                inventory.player, target.id());
+                                return destination == null ? 1 : destination.limit(stack);
+                            }
+                        };
+            addSlot(slot);
+        }
         refreshFilterSnapshot();
     }
 
@@ -144,6 +325,10 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         return modules;
     }
 
+    public boolean isRefill() {
+        return refill;
+    }
+
     public int visibleSlotCount() {
         return bagSlots + 36;
     }
@@ -159,10 +344,15 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
     private void refreshFilterSnapshot() {
         if (!(contents instanceof BagInventory storage)) return;
         ItemStack snapshot =
-                (modules ? ModItems.LARGE_BAG : ModItems.FILTER_BAG).get().getDefaultInstance();
+                (modules
+                                ? ModItems.LARGE_BAG
+                                : refill ? ModItems.REFILL_POUCH : ModItems.FILTER_BAG)
+                        .get()
+                        .getDefaultInstance();
         if (!modules) {
             var data = storage.bagStack().get(DataComponents.CUSTOM_DATA);
             if (data != null) snapshot.set(DataComponents.CUSTOM_DATA, data);
+            else snapshot.remove(DataComponents.CUSTOM_DATA);
         }
         editorState.setItem(0, snapshot);
     }
@@ -177,8 +367,68 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
                 || player.isSpectator()
                 || !stillValid(player)
                 || !(contents instanceof BagInventory storage)) return false;
+        if (operation == FilterActions.SET_REFILL_SOURCE) {
+            if (modules
+                    || !refill
+                    || sampleSlot < 0
+                    || sampleSlot >= 9
+                    || (field.equals("destination") && !getCarried().isEmpty())) return false;
+            if (field.equals("destination") && !value.isEmpty()) {
+                if (!RefillTargets.valid(value)) return false;
+                if (value.startsWith("curios:")
+                        && BagEquipment.refillTargets(player).stream()
+                                .noneMatch(t -> t.id().equals(value))) return false;
+            }
+            if (!RefillSlotSettings.set(storage.bagStack(), sampleSlot, field, value)) return false;
+            contents.setChanged();
+            refreshFilterSnapshot();
+            broadcastChanges();
+            return true;
+        }
+        if (operation == FilterActions.SET_REFILL_TARGET) {
+            if (modules
+                    || !refill
+                    || sampleSlot != -1
+                    || !(field.equals("true") || field.equals("false"))
+                    || !getCarried().isEmpty()
+                    || !RefillTargets.valid(value)) return false;
+            if (value.startsWith("curios:")
+                    && BagEquipment.refillTargets(player).stream()
+                            .noneMatch(t -> t.id().equals(value))) return false;
+            if (!RefillTargets.set(storage.bagStack(), value, Boolean.parseBoolean(field)))
+                return false;
+            contents.setChanged();
+            refreshFilterSnapshot();
+            broadcastChanges();
+            return true;
+        }
+        if (operation == FilterActions.SET_REFILL_OPTION) {
+            if (modules
+                    || !refill
+                    || sampleSlot != -1
+                    || !RefillSettings.set(storage.bagStack(), field, value)) return false;
+            contents.setChanged();
+            refreshFilterSnapshot();
+            broadcastChanges();
+            return true;
+        }
+        if (operation == FilterActions.SET_HOTBAR_REFILL
+                || operation == FilterActions.SET_TRADE_REFILL) {
+            boolean trade = operation == FilterActions.SET_TRADE_REFILL;
+            if (modules
+                    || !refill
+                    || sampleSlot != -1
+                    || !field.equals(trade ? "trade" : "hotbar")
+                    || !(value.equals("true") || value.equals("false"))) return false;
+            RefillSettings.setEnabled(storage.bagStack(), trade, Boolean.parseBoolean(value));
+            contents.setChanged();
+            refreshFilterSnapshot();
+            broadcastChanges();
+            return true;
+        }
         if (operation == FilterActions.SET_PICKUP_ENABLED) {
             if (modules
+                    || refill
                     || sampleSlot != -1
                     || !field.equals("pickup")
                     || !(value.equals("true") || value.equals("false"))) return false;
@@ -251,15 +501,61 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         return changed;
     }
 
+    /**
+     * Returns item count moved, or -1 for a rejected/stale request. Never touches hotbar/equipment.
+     */
+    public int stowAll(Player player, int requestContainerId) {
+        if (player.level().isClientSide
+                || player.containerMenu != this
+                || containerId != requestContainerId
+                || !modules
+                || player.isSpectator()
+                || rootStorage == null
+                || contents != rootStorage
+                || !root.is(ModItems.LARGE_BAG.get())
+                || !getCarried().isEmpty()
+                || !stillValid(player)) return -1;
+        int moved = 0;
+        Inventory inventory = player.getInventory();
+        // Reuse the open menu's live parent view, never construct a competing root writer.
+        for (int slot = 9; slot < 36; slot++) {
+            ItemStack source = inventory.getItem(slot);
+            if (source.isEmpty()) continue;
+            ItemStack remainder = BagRouter.routeManual(rootStorage, source);
+            int amount = source.getCount() - remainder.getCount();
+            if (amount <= 0) continue;
+            inventory.setItem(slot, remainder);
+            moved += amount;
+        }
+        if (moved > 0) {
+            inventory.setChanged();
+            broadcastChanges();
+        }
+        player.displayClientMessage(
+                moved == 0
+                        ? Component.translatable("message.packingcube.stow_empty")
+                        : Component.translatable("message.packingcube.stow_result", moved),
+                true);
+        return moved;
+    }
+
     @Override
     public boolean stillValid(Player player) {
-        return player.level().isClientSide || locateRoot(player);
+        return player.level().isClientSide
+                || (locateRoot(player)
+                        && curiosTargets.stream()
+                                .map(BagEquipment.Target::id)
+                                .toList()
+                                .equals(
+                                        BagEquipment.refillTargets(player).stream()
+                                                .map(BagEquipment.Target::id)
+                                                .toList()));
     }
 
     @Override
     public void clicked(int slotId, int button, ClickType type, Player player) {
         if (!player.level().isClientSide && !stillValid(player)) return;
-        if (slotId >= visibleSlotCount()) return;
+        if (slotId >= visibleSlotCount() && !isSideSlot(slotId)) return;
         super.clicked(slotId, button, type, player);
         if (!player.level().isClientSide && !locateRoot(player)) {
             // Dropped or otherwise outside inventory/cursor: stop editing immediately.
@@ -269,19 +565,24 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
 
     @Override
     public boolean canTakeItemForPickAll(ItemStack stack, Slot slot) {
-        return slot.container != editorState && super.canTakeItemForPickAll(stack, slot);
+        return slot.container != editorState
+                && !isSideSlot(slot.index)
+                && super.canTakeItemForPickAll(stack, slot);
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         if ((!player.level().isClientSide && !stillValid(player))
                 || index < 0
-                || index >= visibleSlotCount()) return ItemStack.EMPTY;
+                || (index >= visibleSlotCount() && !isSideSlot(index))) return ItemStack.EMPTY;
         Slot slot = slots.get(index);
         if (!slot.hasItem() || !slot.mayPickup(player)) return ItemStack.EMPTY;
         ItemStack stack = slot.getItem();
         ItemStack original = stack.copy();
-        if (index < bagSlots) {
+        if (isSideSlot(index)) {
+            if (!moveItemStackTo(stack, bagSlots, visibleSlotCount(), false))
+                return ItemStack.EMPTY;
+        } else if (index < bagSlots) {
             if (!moveItemStackTo(stack, bagSlots, visibleSlotCount(), true)) return ItemStack.EMPTY;
         } else {
             // Vanilla's merge-into-existing-stacks path does not call Slot.mayPlace.

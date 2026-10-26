@@ -1,9 +1,9 @@
 package github.nyeptos.packingcube.client.widget;
 
-import github.nyeptos.packingcube.gui.FloatingWindowState;
-import github.nyeptos.packingcube.gui.GuiRenderLayers;
-import github.nyeptos.packingcube.gui.GuiSurface;
-import github.nyeptos.packingcube.gui.TooltipQueue;
+import github.nyeptos.packingcube.gui.skin.GuiRenderLayers;
+import github.nyeptos.packingcube.gui.skin.GuiSurface;
+import github.nyeptos.packingcube.gui.skin.TooltipQueue;
+import github.nyeptos.packingcube.gui.window.FloatingWindowState;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;

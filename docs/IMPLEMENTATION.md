@@ -264,3 +264,84 @@ SkinnedButtonでisHoveredOrFocusedを無条件に使うのをやめ、実マウ�
 SettingsScrollPanelのつまみへマウスが入った時にhover音を1回、左クリックでつまみ/トラックのドラッグを開始した時にgrab音を1回再生。hoverはUI_BUTTON_CLICK pitch1.6 volume0.15、grabはpitch1.8 volume0.2。ドラッグ中にカーソルがつまみ内外を行き来しても連続再生しない。トラッククリックでつまみがマウス下へ移動してもhoverを重ねない。マウスを離した時の音は追加しない。
 
 ScrollbarSoundStateで進入/ジェスチャー単位の発音を管理。スクロールバーが不要な場合は無音・状態をリセット。UiInteractionSoundsにボタンとスクロールバーの共通音処理を分離し、既存ボタンの音量/高さは維持。画像・アニメーション・当たり判定・スクロール量・背景透過・バニラGUIは変更しない。
+
+## PC-42 手動の一括収納
+バックパック管理画面右上へ「一括収納」を追加。通常インベントリ27枠のみを開いているバックパックの装着ポーチへ、既存フィルター・優先度（同値は左から右）順で移す。自動収納OFFも手動収納可。ホットバー/防具/オフハンド/カーソルは動かさず、満杯/対象外は元枠に残す。他バックパック・単体ポーチへは振り分けない。廃棄なし。空カーソルでのみ操作可能。収納個数/0件をアクションバー表示。
+
+BagStowPayloadはmenu IDだけを送り、BagMenu.stowAllで現menu/ID/所有/一意性/生存/非観戦等を検証。開いた親の既存rootStorageを再利用するBagRouter.routeManualを追加し、拾得経路とpriority安定ソート・残数挿入を共有。日英4キー生成、既存ボタン画像/ホバー音/演出を使用。詳細はdocs/MANUAL_STOW.md。
+
+## PC-43 補充ポーチ
+受領したrefill_pouch.png16×16を原本のまま使用し、独立アイテムrefill_pouchを追加。1列9枠の装着モジュール/単体利用/ラジアルに対応。ホットバー補充と取引補充を独立ON/OFF（新規は両ON）、優先度と共通フィルターを設定できる。初期収納条件は含まない・未登録、通常収納ポーチの初期条件は不変。補充元は装着した有効な補充ポーチだけ。通常ポーチ・単体からは補わず、拾得自動収納もしない。一括収納は明示操作として収納可。
+
+ホットバーはメインハンドの実使用を起点に選択中枠の減少分だけ同一アイテム/全component一致で補充。取引は選択中の現在価格1回分の不足を入力へ供給し、2材料は両方足りる場合のみ。結果取得/自動売買はしない。限定ATで選択取引を読み、バニラGUI・終了時の返却処理は変更しない。通信生成データへ種別boolを追加し通信version2、マルチ全員更新が必要。レシピ未追加。詳細/制限/実機手順はdocs/REFILL_POUCH.md。
+
+
+## PC-44 補充先・タイミング・補充フィルター
+補充ポーチのフィルターを収納制限から搬出制限へ変更。通常収納ポーチは不変。補充ポーチへの手動/一括収納はフィルター非依存、非入れ子制限を維持。フィルター無効=全候補、ONではアイテム/タグの含む・含まないをホットバー/オフハンド/取引すべての取り出しに適用し、OFFやモード切替でも登録は保持する。
+
+ホットバー9枠の指定・独立オフハンドON/OFF、使い切り/しきい値/毎回の使用起点タイミング、補充後個数を追加。初期は全枠/3機能ON、使い切り、1スタック、補充フィルターOFF。対象枠は使用した枠に限り、他の空き枠は埋めない。トーテム消費イベントも検知し、専用設定ではなく共通フィルターで制御。投棄/別物/手動移動のみは保護。取引は1回分のまま。
+
+右設定は既存スクロール内の10行と共通エディター。RefillSettingsPanelを分離し、既存素材/音/アニメーション/白文字/透過/左インベントリ位置を維持。現menu/所有/種類/値のサーバー検証を通して保存し、ラジアル見本にも安全な設定のみ反映。通信版3、全参加者の更新が必要。詳細はdocs/REFILL_POUCH.md。実描画/操作/実NPC/実マルチは要確認。
+
+
+## PC-45 補充設定の整理と検知・診断
+名称は「補充フィルター」に統一。補充先/補充方法/補充フィルターの3ページへ分け、不要な残数入力・指定個数入力は非表示、複数ポーチ優先度は詳細を開いた時だけ表示。条件を「手元が0個になったら補充」等の文章にし、数値は「補充を始める手元の残り個数」「補充後に手元に持つ個数」と明記。追加個数ではないことも説明する。フィルターOFFで登録エディターを隠すが登録は保持。ページ切替は保存値に影響しない。短いページの余分なスクロール領域をなくし、非表示エディターへの入力をnullガードする。
+
+UseItemOnBlockEvent/EntityInteractSpecific/非耐久PlayerDestroyItemEventを補充検知へ追加。従来の直接イベント+手動shrinkに加え、実ServerPlayerGameModeでのブロック設置両手、実食事完了、Player.tick、直接ItemStack.useOnをテストする。サーバー最終数だけでなくクライアント予測のスロットミラーを追加し、16→15→16/オフハンド1→0→1で補充後の差分同期が省略される不具合を修正前に再現。補充成功時に対象枠のremote baselineを消費直後の状態へ更新し、バニラ差分同期で必ず訂正を送る。実クライアントでの解消は要確認。読み取り専用/権限不要の`/packingcube refillstatus`で両手の適用条件を確認できる。適用後の実機確認待ち。ほかの原因が残る場合は再現条件・ゲームモード・装着状況・診断結果を確認する。画像・モデル・装備位置・収納ルール・初期値・通信形式は変更しない。
+
+### PC-46
+
+Implemented destination **selection GUI and persistence**, not expanded/initial-empty refill.
+Added pure `RefillTargetInteraction`, item-owned `RefillTargets`, optional Curios target
+previews, and `RefillTargetPanel`. Side equipment is read-only. Existing hand refill follows
+selected destinations; server validates menu ownership, cursor state, and live Curios identities.
+New operation10 uses the existing bounded filter payload; network version4.
+No new entity/item model, crafting recipe, vanilla screen replacement, or Git commit.
+
+### PC-47
+
+Implemented nine independent `RefillSlotSettings` rules, one destination each with shared-target
+priority, enabled/replace/timing/count settings. `RefillDestination` adapts actual vanilla Slots
+and optional live Curios handlers. `RefillDispatcher` performs deterministic source-specific supply,
+empty-slot initialization, safe replacement return reservations, and no same-pass repeat replacement.
+New pouches have explicit unassigned rules; old saved pouches remain legacy until an explicit edit.
+Operation11, network5, JA/EN labels, source-page GUI and single-shot input mode separation.
+No model/PNG/renderer offsets changed; no Git commit or push.
+
+## PC-49：装備サイドパネル・名称整理
+
+- 元の45中央枠＋2設定同期枠を保ったまま、装備5枠とCurios機能枠を追加。
+- サイド描画とメニュー同期を接続。手動の着脱は標準コンテナクリックへ、指定モードは設定通信へ分離。
+- 防具は標準スロット、Curiosは公開ハンドラーの妥当性判定・抽出制約を再利用。
+- 開く際のCurios ID/アイコン配列を両側で共有し、構成変更は閉じて再取得。ネットワーク版6。
+- 「小さな収納ポーチ / Small Storage Pouch」を「収納ポーチ / Storage Pouch」へ変更。保存IDや素材名は維持。
+- 画像・モデル・装備位置・バニラ画面への変更なし。
+
+## PC-50：2〜9番の補充先指定不具合の調査・入力競合対策
+
+ユーザー提供のBagScreen・RefillTargetPanel・BagMenuはPC49ローカル版と一致。全9補充元を設定パケット→メニュー検証→入れ子保存→スナップショット→実補充まで通すサーバーテストは修正前も成功した。一方、画面の選択モードでも古い設定パネルの解放処理が先行し得る構造が残っていたため、選択入力の優先順位と開始時の同期的ウィジット再構築を修正した。開始時の補充元番号も確定まで保持する。申告症状が実際の画面で解消したかはユーザー確認待ち。
+
+## PC-51：入れ子補充ポーチの開封判定修正
+
+PC49でBagMenuOpenerに追加したサーバー側の種類判定が `root` を参照していた。入れ子のポーチでは `root` は所有するバックパックなので、サーバーは補充ポーチでないと判定して設定操作を拒否し、一方で開封データを読むクライアントは補充設定を表示していた。
+
+種類判定を `storage.bagStack()` に変更し、同じbooleanをサーバーメニュー構築とクライアント開封データに使う。PC50の入力競合対策とは別の、保存拒否の原因。
+
+従来のテストはBagMenuの種類自動判定コンストラクターを直接呼んでおり、この開封経路を通っていなかった。新しいテストは本番のラジアル選択→BagMenuOpener→開封バッファ→サーバーメニューを通す。修正前に「Server and opening-data client both identify nested refill pouch」で失敗することを確認した。
+
+補充先枠・共通装備サイド枠のホバー/押下を、個別枠の不透明度アニメーションにした。押下の180msフィードバックは設定画面へ戻った後も減衰し、枠やヒット範囲は移動・拡縮しない。ホバー/押下は既存の高めの静かなUI音、選択確定音も維持する。PNG・モデル・保存形式・通信形式は変更しない。
+
+## PC-52：共通ウィジェットの状態・描画補強
+
+ユーザー申告：両ポーチのボタンでアニメーションがなく、ホバー/押下画像も一部反映されない。実クライアントの状態は未再現だが、再生成で共通ボタンのフィードバックが初期化される点、押下の専用画像状態がない点、補充元/ページタブがスイッチとして描かれる点を修正した。
+
+SkinnedButtonのFeedbackをSettingsScrollPanel経由で画面内キャッシュに引き継ぎ、入力範囲と描画変形を分離したままホバー/ホールド/押下パルスを判定する。WidgetTexturesには任意の状態画像を存在確認してから使う経路を追加し、未提供の画像を要求しない。共通描画関連の最新ソースをまとめた上書き用配布物も用意する。原因の全てを特定したとはせず、GUI描画と音はユーザー確認待ち。
+
+画像、モデル、バッグの保存・補充・開封判定、通信形式は変更しない。
+
+
+## PC-53：レジストリ周辺の整理
+
+ModRegistriesを登録入口とし、増えていたゲームイベントの配線をModGameEventsへ分離した。既存のアイテム・メニュー・タブの所有クラスはそのまま利用する。ID・保存形式・通信形式・イベント優先度・登録順を変更しない。テクスチャ・モデル・GUI描画も変更しない。
+
+PC-52のGUI修正はユーザーより「うまくいった」と動作確認済みの報告あり。コミット用文章を提供済みだが、この作業環境からGit commit/pushは行っていない。

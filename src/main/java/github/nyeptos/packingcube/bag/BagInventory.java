@@ -1,5 +1,6 @@
 package github.nyeptos.packingcube.bag;
 
+import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.core.component.DataComponents;
@@ -55,12 +56,15 @@ public final class BagInventory extends SimpleContainer {
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return accepts(modules, stack) && (modules || BagFilter.matches(bag, stack));
+        return accepts(modules, stack)
+                && (modules
+                        || bag.is(ModItems.REFILL_POUCH.get())
+                        || BagFilter.matches(bag, stack));
     }
 
     /** Shared by the server inventory and both client/server menu slots. */
     public static boolean accepts(boolean modules, ItemStack stack) {
-        if (modules) return stack.is(ModItems.FILTER_BAG.get());
+        if (modules) return isPouch(stack);
         // No bags, shulker boxes, bundles or other non-nestable containers.
         return !isBag(stack) && stack.getItem().canFitInsideContainerItems();
     }
@@ -69,8 +73,12 @@ public final class BagInventory extends SimpleContainer {
         return bag;
     }
 
+    public static boolean isPouch(ItemStack stack) {
+        return stack.is(ModItems.FILTER_BAG.get()) || stack.is(ModItems.REFILL_POUCH.get());
+    }
+
     public static boolean isBag(ItemStack stack) {
-        return stack.is(ModItems.LARGE_BAG.get()) || stack.is(ModItems.FILTER_BAG.get());
+        return stack.is(ModItems.LARGE_BAG.get()) || isPouch(stack);
     }
 
     @Override

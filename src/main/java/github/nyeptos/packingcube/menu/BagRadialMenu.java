@@ -1,8 +1,9 @@
 package github.nyeptos.packingcube.menu;
 
-import github.nyeptos.packingcube.bag.BagFilter;
 import github.nyeptos.packingcube.bag.BagIdentity;
 import github.nyeptos.packingcube.bag.BagInventory;
+import github.nyeptos.packingcube.bag.filter.BagFilter;
+import github.nyeptos.packingcube.bag.refill.RefillSettings;
 import github.nyeptos.packingcube.registry.ModItems;
 import github.nyeptos.packingcube.registry.ModMenus;
 
@@ -35,11 +36,13 @@ public final class BagRadialMenu extends AbstractContainerMenu implements BagRoo
         for (int i = 0; i < BagInventory.MODULE_SLOTS; i++) {
             ItemStack actual = modules == null ? ItemStack.EMPTY : modules.getItem(i);
             expected[i] = actual.copy();
-            if (actual.is(ModItems.FILTER_BAG.get()) && actual.getCount() == 1) {
-                ItemStack icon = ModItems.FILTER_BAG.get().getDefaultInstance();
+            if (BagInventory.isPouch(actual) && actual.getCount() == 1) {
+                ItemStack icon = actual.getItem().getDefaultInstance();
                 var name = actual.get(DataComponents.CUSTOM_NAME);
                 if (name != null) icon.set(DataComponents.CUSTOM_NAME, name);
                 BagFilter.copySettings(actual, icon);
+                if (actual.is(ModItems.REFILL_POUCH.get()))
+                    RefillSettings.copySettings(actual, icon);
                 icons.setItem(i, icon);
             }
             addSlot(
@@ -101,7 +104,7 @@ public final class BagRadialMenu extends AbstractContainerMenu implements BagRoo
         ItemStack targetStack = root;
         if (!modules) {
             ItemStack actual = parent.getItem(moduleSlot);
-            if (!actual.is(ModItems.FILTER_BAG.get())
+            if (!BagInventory.isPouch(actual)
                     || actual.getCount() != 1
                     || !ItemStack.matches(actual, expected[moduleSlot])) return false;
             target = new BagInventory(actual, false, parent);

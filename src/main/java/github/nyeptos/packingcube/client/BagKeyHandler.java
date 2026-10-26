@@ -3,8 +3,8 @@ package github.nyeptos.packingcube.client;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import github.nyeptos.packingcube.Packingcube;
-import github.nyeptos.packingcube.bag.BagKeyActions;
-import github.nyeptos.packingcube.bag.BagKeyLatch;
+import github.nyeptos.packingcube.bag.input.BagKeyActions;
+import github.nyeptos.packingcube.bag.input.BagKeyLatch;
 import github.nyeptos.packingcube.network.OpenBigBagPayload;
 import github.nyeptos.packingcube.network.OpenEquippedBagPayload;
 

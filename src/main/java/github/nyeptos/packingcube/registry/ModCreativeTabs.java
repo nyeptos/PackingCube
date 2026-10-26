@@ -24,6 +24,7 @@ public final class ModCreativeTabs {
                                             (parameters, output) -> {
                                                 output.accept(ModItems.LARGE_BAG.get());
                                                 output.accept(ModItems.FILTER_BAG.get());
+                                                output.accept(ModItems.REFILL_POUCH.get());
                                             })
                                     .build());
 

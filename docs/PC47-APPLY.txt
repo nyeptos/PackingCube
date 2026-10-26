@@ -1,0 +1,8 @@
+PC45/PC46、またはPC47差分を一部適用した環境の補完用です。
+runClientを停止し、プロジェクトをバックアップしてから展開してください。
+このZIP内のsrcとdocsをPackingCubeプロジェクト直下（build.gradleがある場所）へ統合・上書きします。
+Javaはsrc/main/java/github/nyeptos/packingcube/以下に入ります。
+RefillTargets.javaを含むPC46の追加クラスとPC47までの変更ファイルを収録しています。
+PC47差分パッチを改めて適用する必要はありません。
+既存のアイテムPNG・モデル・背負う位置のファイルは収録していません。
+自分でソースを変更している場合は上書き前に差分を退避してください。

@@ -589,3 +589,102 @@ build / runGameTestServer成功: Curiosあり155件、なし144件。新規4テ�
 
 ## PC-41 スクロールバーの音
 build / runGameTestServer成功: Curiosあり158件、なし147件。新規3テストでつまみ進入1回/滞在中無音、つかむ音の同一ジェスチャー中抑止・ドラッグ中の出入り無音・トラッククリックの二重発音防止、非表示バー無音/再出現リセットを確認。実クライアントでの音量・音色・ドラッグ操作は未確認。
+
+## PC-42 手動の一括収納
+runData成功後、別Gradle実行でbuild / runGameTestServer成功: Curiosあり170件、なし158件。新規共通11テストとCurios専用1テスト。通常27枠/ホットバー・装備・オフハンド保護、OFFポーチへの手動収納、優先度と同値左優先、満杯での残数/連打保存、対象親限定/単体ポーチ不使用、タグ/含まない/空条件/非入れ子制限、名前等のコンポーネント保持、本体移動・再オープンでの保存、古いmenu/不正ID/カーソル保持/単体画面拒否、ID重複/不在/死亡/観戦拒否、クリエイティブ満杯時の非廃棄、payload codecと日英新規4キー、Curios装備中の対象親限定保存を検証。実クライアントGUI/入力/ワールド再起動/実マルチは未確認。
+
+## PC-43 補充ポーチ
+runData成功後、別Gradle実行でbuild / runGameTestServer成功: Curiosあり185件、なし172件。新規共通14テストとCurios専用1テスト。初期設定・独立切替・親保存・画面種別転送、使用イベント後の選択ホットバー補充、手動移動/投棄/異種コンポーネント/別スロットの保護、優先度と残数、取引入力2種の事前確保/同一材料二重計上防止/選択レシピ/現在価格/売切れ/手動入力保護、自動取得対象外と手動一括収納、受領PNGの原本一致とモデル参照、CustomData削除後の表示、Curios装備中の保存を検証。
+取引テストは実MerchantMenuとテスト用Merchantを使用し、実村人・NPCとのクライアント操作を確認したものではない。実クライアントの見た目/操作/各アイテムの使用経路/取引終了時の返却/実マルチは未確認。通信バージョンを2に更新しているため、サーバーと全クライアントを同じ版に更新すること。
+
+## PC-44 補充先・タイミング・補充フィルター
+runData成功後、最終ソースで別Gradle実行のbuild / runGameTestServer成功: Curiosあり201件、なし188件。新規共通16テストを追加し、PC-43回帰テストの補充方針を明示設定に更新。設定初期値/数値・文字列allowlist/不正要求の無変更、収納・menu挿入・一括収納での補充フィルター非適用、含む/含まない/タグ/空条件/ON-OFF保持、対象枠/独立オフハンド、使い切り/しきい値/毎回と個数、最大16個/不足/消費なし、優先度の上限/フィルター対象外からのfallback、取引の補充フィルターと2材料の事前確保、実damage→トーテム消費イベント→Post補充、取消/別物/手動移動保護、両手同tickの独立記録、親保存/menu同期/ラジアル安全コピー、小ウィンドウの論理配置・通常収納ポーチの従来条件を検証。
+日英各66→81キー。既存訳文・全PNG・モデルが変更前と一致することを確認。Java21の書式チェックとgit diff --check成功。実クライアントの描画・クリック・音・実NPC・実マルチ・ワールド再起動は未確認。GameTestで実damageのトーテム消費を検証したことは、他MODとの消費/死亡回避経路の互換性や実プレイ確認を意味しない。通信版3、マルチ全員更新が必要。
+
+## PC-45 補充設定整理・同期修正
+最終runData成功後、別Gradle実行のbuild / runGameTestServer成功: Curiosあり211件、なし198件。新規共通10テスト（実使用6・表示方針/診断4）を追加。Java21書式check・git diff --check成功。日英各81→110、追加29キー/既存7文言改善。既存全PNG・モデル・装備位置・AT・通信形式を変更しない。
+
+重要な再現: サーバー数量だけの設置/食事テストは旧処理でも通ったが、ContainerSynchronizerを受けるクライアント予測ミラーを追加した修正前テストはメインハンド16→15→16、オフハンド1→0→1の2件が失敗（サーバー最終数のみ正しく、クライアントミラーが減ったまま/空のまま）。補充後の値が最後に送信した値と一致すると差分が送られないことを再現した。修正では補充成功時に対象枠のremote baselineを消費直後の状態へ更新してからバニラ差分同期を実行。修正後は両件を含む全211/198件が通過。実ネットワーク/実画面を見た検証ではない。
+
+実FakeServerPlayerのServerPlayerGameMode.useItemOn（両手）、食事の実完了処理、Player.doTick→登録Post、直接ItemStack.useOnを検証。通常使用に加えてUseItemOnBlock/EntityInteractSpecific/非耐久PlayerDestroyItemの検知を補足。UI方針は3ページ/不要な数値欄非表示/優先度詳細/フィルターOFFで編集欄非表示・登録保持/短い内容の高さ/統一名称と数値ラベルを検証。読み取り専用diagnosticsは装着対象なし・空手・同一データ在庫なし・フィルター除外・creative・使用待ちを区別し、収納/設定を書き換えないことを検証。
+
+実クライアントの描画・クリック・音・予測と同期の見え方、実NPC・実マルチ・他MOD独自使用経路は未確認。ユーザーの試したアイテム/モード/装着状況も未取得のため、その環境で症状が解消したかは再確認が必要。残る場合は`/packingcube refillstatus`と再現手順を取得する。今回の同期不具合の再現/修正を、全ての補充停止原因を解決した意味にはしない。
+
+## PC-46 target selection
+
+- Automated server GameTests: existing 211 + 5 shared selection/settings/authority tests +
+  1 Curios-only registered-icon/active-slot/defensive-copy test = 217 with Curios.
+  Without Curios: existing198 + shared5 = 203.
+- Artist PNGs checked for expected26×98/18×18 size; selection overlays have transparent centers.
+- Incremental text patch + five-PNG archive must apply to PC45 baseline and byte-match outputs.
+- No real Minecraft client visual, cursor/input, sound, NPC or multiplayer validation here.
+  User must check: inventory stays anchored, sides show proper icons, selecting hides settings
+  temporarily, click-away cancels, normal item movement resumes after finishing, selected marks
+  survive closing/reopening, and Curios scrolling/slot changes use correct identities.
+- New inventory/armor/Curios automatic refill and initial-empty-slot assignment are explicitly
+  **not implemented** in PC46. Existing hand and trade refill retain PC45 behavior.
+
+## PC-47 source-slot rules
+
+Added tests for per-source independent data/pages, duplicate targets, initial empty inventory/offhand,
+source-specific quantities, ON/OFF/filter, replacement OFF and return preservation, full/partial return
+capacity abort, priority/tie/fallback, armor validity/stack bounds/binding curse, use witness and real
+item stack limits, menu/cursor pause, input-mode entry/commit/cancel, malformed/stale destinations,
+live backpack protection, no legacy bypass, disabled trade sources, new-pouch/old-data migration,
+real server placement + client prediction mirror, and Curios validity/inactive/unequip denial.
+Legacy hand regression tests now construct explicit PC45/46 saved-data fixtures rather than newly
+created PC47 pouches, whose defaults intentionally changed to unassigned source rules.
+
+Actual Minecraft client layout/animation/input/audio, real wire-network multiplayer and real NPC
+transactions are not visually/interactively verified here. Automated tests are not a substitute.
+
+Final PC-47 automated result: runData/build successful; **238/238 with Curios**, **222/222
+without Curios**. JA/EN both138 keys. Changed Java formatting dry-run and `git diff --check`
+clean. PC46→PC47 text patch apply-check and byte-for-byte output verification passed; no PNG,
+item model, equipped renderer or backpack offset changes. No commit/push.
+
+## PC-49：バッグからの装備操作
+
+- `runData build runGameTestServer`：Curiosあり **244/244** 成功。
+- `build runGameTestServer -PwithoutCurios=true`：Curiosなし **226/226** 成功。
+- 追加した6件：両バッグの防具・オフハンド着脱/右クリック/Shift移動、束縛の呪い/満杯、設定スナップショットの保護、Curios ID/アイコン開封通信と同期ミラー、開いたバックパック自身のCuriosへの付け外し、Curios取り外しイベント拒否。
+- 開発用のJava整形検証を通過。
+- 実クライアントでのGUI描画・マウス/キー入力・音と、実ネットワークのマルチプレイ確認は未実施。サーバーテストの成功と区別する。
+- PNG/アイテム・装備モデルは配布パッチに含めない。
+
+## PC-50：補充先選択の入力競合対策
+
+- Curiosあり：`build runGameTestServer` **246/246** 成功。
+- Curiosなし：同タスク `-PwithoutCurios=true` **228/228** 成功。
+- 新規2件：全9補充元のページ番号/パケットcodec/メニュー保存/入れ子保存/同期スナップショット/実補充の一連検証、および全9補充元の開始番号固定・古い押下破棄・確定・キャンセル。
+- ソース上でも、選択モードのマウス処理が設定パネル処理より先にあることを検証。
+- 実クライアントのGUI操作は未検証。特に報告された2〜9番の選択確定/未指定に戻る症状の解消はユーザー確認待ち。
+- PNG・モデル・保存ID・ネットワーク形式への変更なし。
+
+## PC-51：本番開封経路の判定一致・再指定
+
+- 修正前：本番ラジアル選択→開封ヘルパー→バッファ読取→サーバーメニューのテストで、入れ子の補充ポーチのサーバー/クライアント種類不一致を再現（248件中この1件のみ失敗）。
+- 修正後：Curiosあり **250/250**、Curiosなし **231/231** 成功、各build成功。
+- 追加4件：携帯バックパック内の実開封経路と全9元の初回指定/同じ先の再指定/別の先への変更/開き直し/実補充、単体2種類ポーチの開封データ一致、枠の不透明度アニメーション、Curios装備中のバックパック内ポーチで同じ全9元の操作。
+- Java整形・差分検査・変更ファイルのパッチ適用検証を実施。
+- 実クライアントの描画・入力・音・実ネットワークは未検証。音の有無と音量の体感はユーザー確認待ち。
+- PNG、モデル、言語生成ファイル、保存ID/形式、通信形式の変更なし。
+
+## PC-52：共通ボタンの描画・フィードバック
+
+- Curiosあり `build runGameTestServer`：**252/252** 成功。
+- Curiosなし同タスク：**233/233** 成功。押下音の共通化を含む最終ソースのビルド成功。
+- 新規2件：長押し時の押し込み維持/押下画像の時間窓/無効化リセット、および通常ボタン/ON/OFFスイッチ/×の押下画像の種類と代替画像。
+- 元の20枚のPNGの内容ハッシュ/寸法テストも引き続き成功。PNGへの書き込みなし。
+- 整形・差分・配布ファイル整合性を検証。
+- サーバーテストは実クライアントのホバー座標・描画・ファイル読込・音の体感を確認するものではない。両ポーチでの実動作はユーザー確認待ち。
+
+
+## PC-53：登録処理の責務分離
+
+- Curiosあり `build runGameTestServer`：**253/253** 成功。
+- Curiosなし：**234/234** 成功。どちらもbuild成功。
+- 既存ID保持テストに補充ポーチを追加。新規テストで3種類のスタック上限と補充ポーチの既定データを検査。
+- 移動前後の12件のイベント購読の順序・優先度が一致することを機械比較。
+- リソースのバイト一致・整形・差分・パッチ適用結果を検査。
+- GUI描画や実クライアント動作は今回未検証。機能変更は行っていない。

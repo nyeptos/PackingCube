@@ -5,6 +5,8 @@
 | 場所 | 責務 |
 |---|---|
 | `Packingcube` | MOD IDと起動時の配線だけ |
+| `registry/ModRegistries` | レジストリ登録の入口。MODライフサイクルバスへ接続 |
+| `event/ModGameEvents` | ゲームバスへのイベント登録。既存の順序・優先度を維持 |
 | `registry/ModItems` | バッグなどのアイテム登録 |
 | `registry/ModMenus` | 管理画面・ラジアルのMenuType登録 |
 | `registry/ModCreativeTabs` | クリエイティブタブ登録 |
@@ -94,3 +96,12 @@ BagScreenは常時176×132で通常の中央座標を維持。右設定だけ独
 
 ## ウィジェットスキン（PC-35）
 WidgetSkin/NineSliceAxisはクライアント非依存の状態選択と伸縮計算。WidgetTextures/SkinnedButton/SkinnedEditBoxはPackingCube画面だけに適用する描画アダプタ。受領PNGは専用namespaceに無加工で梱包し、バニラのatlas/spriteは上書きしない。ボタン入力・説明・音・ナレーションは標準クラスを継承。
+
+
+## PC-53：登録入口とイベントバスの分離
+
+`Packingcube` → `ModRegistries.register(modBus)` → アイテム・クリエイティブタブ・メニューの順で登録する。各DeferredRegisterの所有者と公開フィールドは変更しない。`packingcube:refill_pouch`を含む既存IDを維持する。
+
+ゲーム中の12件のイベント購読は `ModGameEvents.register(NeoForge.EVENT_BUS)` に集約する。うち8件のLOWEST優先度と登録順は従来どおり。ネットワーク・datagen・任意Curios連携のライフサイクル登録は別責務として起動クラスに明示する。クライアント専用のClientEventsは変更しない。
+
+新しい登録を追加するときは該当する所有クラスへ追加し、新種のレジストリだけModRegistriesへ入口を足す。ゲームイベントはModGameEventsへ追加する。自動探索や登録の二重化は行わない。

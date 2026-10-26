@@ -1,10 +1,10 @@
 package github.nyeptos.packingcube.client.widget;
 
-import github.nyeptos.packingcube.gui.BagSettingsLayout;
-import github.nyeptos.packingcube.gui.ButtonAnimation;
-import github.nyeptos.packingcube.gui.ScrollbarSoundState;
-import github.nyeptos.packingcube.gui.SettingsScrollState;
-import github.nyeptos.packingcube.gui.WidgetSkin;
+import github.nyeptos.packingcube.gui.animation.ButtonAnimation;
+import github.nyeptos.packingcube.gui.animation.ScrollbarSoundState;
+import github.nyeptos.packingcube.gui.input.SettingsScrollState;
+import github.nyeptos.packingcube.gui.layout.BagSettingsLayout;
+import github.nyeptos.packingcube.gui.skin.WidgetSkin;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
@@ -42,6 +42,12 @@ public final class SettingsScrollPanel extends AbstractContainerEventHandler
     private record Entry(AbstractWidget widget, int localX, int originalY) {}
 
     private final List<Entry> entries = new ArrayList<>();
+    private java.util.Map<String, SkinnedButton.Feedback> buttonFeedback;
+
+    public void feedback(java.util.Map<String, SkinnedButton.Feedback> cache) {
+        buttonFeedback = cache;
+    }
+
     private final SettingsScrollState scroll;
     private Viewport viewport;
     private int originX, originY;
@@ -102,6 +108,20 @@ public final class SettingsScrollPanel extends AbstractContainerEventHandler
     }
 
     public void add(AbstractWidget widget) {
+        if (buttonFeedback != null && widget instanceof SkinnedButton button) {
+            if (buttonFeedback.size() >= 512) buttonFeedback.clear();
+            String key =
+                    button.feedbackStyle()
+                            + ":"
+                            + (widget.getX() - originX)
+                            + ":"
+                            + (widget.getY() - originY)
+                            + ":"
+                            + widget.getWidth()
+                            + ":"
+                            + widget.getHeight();
+            button.feedback(buttonFeedback.computeIfAbsent(key, ignored -> button.feedback()));
+        }
         entries.add(new Entry(widget, widget.getX() - originX, widget.getY() - originY));
         updatePositions();
     }

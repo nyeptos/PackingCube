@@ -1,9 +1,9 @@
 package github.nyeptos.packingcube.client.widget;
 
-import github.nyeptos.packingcube.bag.BagFilter;
-import github.nyeptos.packingcube.gui.BagSettingsLayout;
-import github.nyeptos.packingcube.gui.FilterEditorState;
-import github.nyeptos.packingcube.gui.WidgetSkin;
+import github.nyeptos.packingcube.bag.filter.BagFilter;
+import github.nyeptos.packingcube.gui.input.FilterEditorState;
+import github.nyeptos.packingcube.gui.layout.BagSettingsLayout;
+import github.nyeptos.packingcube.gui.skin.WidgetSkin;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;

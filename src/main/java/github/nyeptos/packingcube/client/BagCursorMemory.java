@@ -1,7 +1,7 @@
 package github.nyeptos.packingcube.client;
 
-import github.nyeptos.packingcube.bag.BagCursorPosition;
-import github.nyeptos.packingcube.bag.BagCursorRelease;
+import github.nyeptos.packingcube.bag.input.BagCursorPosition;
+import github.nyeptos.packingcube.bag.input.BagCursorRelease;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;

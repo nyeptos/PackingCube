@@ -1,7 +1,7 @@
 package github.nyeptos.packingcube.client.widget;
 
-import github.nyeptos.packingcube.gui.GuiSurface;
-import github.nyeptos.packingcube.gui.WidgetSkin;
+import github.nyeptos.packingcube.gui.skin.GuiSurface;
+import github.nyeptos.packingcube.gui.skin.WidgetSkin;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;

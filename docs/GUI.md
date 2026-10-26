@@ -149,3 +149,76 @@ SkinnedButtonでisHoveredOrFocusedを無条件に使うのをやめ、実マウ�
 SettingsScrollPanelのつまみへマウスが入った時にhover音を1回、左クリックでつまみ/トラックのドラッグを開始した時にgrab音を1回再生。hoverはUI_BUTTON_CLICK pitch1.6 volume0.15、grabはpitch1.8 volume0.2。ドラッグ中にカーソルがつまみ内外を行き来しても連続再生しない。トラッククリックでつまみがマウス下へ移動してもhoverを重ねない。マウスを離した時の音は追加しない。
 
 ScrollbarSoundStateで進入/ジェスチャー単位の発音を管理。スクロールバーが不要な場合は無音・状態をリセット。UiInteractionSoundsにボタンとスクロールバーの共通音処理を分離し、既存ボタンの音量/高さは維持。画像・アニメーション・当たり判定・スクロール量・背景透過・バニラGUIは変更しない。
+
+## PC-42 手動の一括収納
+バックパック管理画面右上へ「一括収納」を追加。通常インベントリ27枠のみを開いているバックパックの装着ポーチへ、既存フィルター・優先度（同値は左から右）順で移す。自動収納OFFも手動収納可。ホットバー/防具/オフハンド/カーソルは動かさず、満杯/対象外は元枠に残す。他バックパック・単体ポーチへは振り分けない。廃棄なし。空カーソルでのみ操作可能。収納個数/0件をアクションバー表示。
+
+BagStowPayloadはmenu IDだけを送り、BagMenu.stowAllで現menu/ID/所有/一意性/生存/非観戦等を検証。開いた親の既存rootStorageを再利用するBagRouter.routeManualを追加し、拾得経路とpriority安定ソート・残数挿入を共有。日英4キー生成、既存ボタン画像/ホバー音/演出を使用。詳細はdocs/MANUAL_STOW.md。
+
+## PC-43 補充ポーチ
+受領したrefill_pouch.png16×16を原本のまま使用し、独立アイテムrefill_pouchを追加。1列9枠の装着モジュール/単体利用/ラジアルに対応。ホットバー補充と取引補充を独立ON/OFF（新規は両ON）、優先度と共通フィルターを設定できる。初期収納条件は含まない・未登録、通常収納ポーチの初期条件は不変。補充元は装着した有効な補充ポーチだけ。通常ポーチ・単体からは補わず、拾得自動収納もしない。一括収納は明示操作として収納可。
+
+ホットバーはメインハンドの実使用を起点に選択中枠の減少分だけ同一アイテム/全component一致で補充。取引は選択中の現在価格1回分の不足を入力へ供給し、2材料は両方足りる場合のみ。結果取得/自動売買はしない。限定ATで選択取引を読み、バニラGUI・終了時の返却処理は変更しない。通信生成データへ種別boolを追加し通信version2、マルチ全員更新が必要。レシピ未追加。詳細/制限/実機手順はdocs/REFILL_POUCH.md。
+
+
+## PC-44 補充先・タイミング・補充フィルター
+補充ポーチのフィルターを収納制限から搬出制限へ変更。通常収納ポーチは不変。補充ポーチへの手動/一括収納はフィルター非依存、非入れ子制限を維持。フィルター無効=全候補、ONではアイテム/タグの含む・含まないをホットバー/オフハンド/取引すべての取り出しに適用し、OFFやモード切替でも登録は保持する。
+
+ホットバー9枠の指定・独立オフハンドON/OFF、使い切り/しきい値/毎回の使用起点タイミング、補充後個数を追加。初期は全枠/3機能ON、使い切り、1スタック、補充フィルターOFF。対象枠は使用した枠に限り、他の空き枠は埋めない。トーテム消費イベントも検知し、専用設定ではなく共通フィルターで制御。投棄/別物/手動移動のみは保護。取引は1回分のまま。
+
+右設定は既存スクロール内の10行と共通エディター。RefillSettingsPanelを分離し、既存素材/音/アニメーション/白文字/透過/左インベントリ位置を維持。現menu/所有/種類/値のサーバー検証を通して保存し、ラジアル見本にも安全な設定のみ反映。通信版3、全参加者の更新が必要。詳細はdocs/REFILL_POUCH.md。実描画/操作/実NPC/実マルチは要確認。
+
+
+## PC-45 補充設定の整理と検知・診断
+名称は「補充フィルター」に統一。補充先/補充方法/補充フィルターの3ページへ分け、不要な残数入力・指定個数入力は非表示、複数ポーチ優先度は詳細を開いた時だけ表示。条件を「手元が0個になったら補充」等の文章にし、数値は「補充を始める手元の残り個数」「補充後に手元に持つ個数」と明記。追加個数ではないことも説明する。フィルターOFFで登録エディターを隠すが登録は保持。ページ切替は保存値に影響しない。短いページの余分なスクロール領域をなくし、非表示エディターへの入力をnullガードする。
+
+UseItemOnBlockEvent/EntityInteractSpecific/非耐久PlayerDestroyItemEventを補充検知へ追加。従来の直接イベント+手動shrinkに加え、実ServerPlayerGameModeでのブロック設置両手、実食事完了、Player.tick、直接ItemStack.useOnをテストする。サーバー最終数だけでなくクライアント予測のスロットミラーを追加し、16→15→16/オフハンド1→0→1で補充後の差分同期が省略される不具合を修正前に再現。補充成功時に対象枠のremote baselineを消費直後の状態へ更新し、バニラ差分同期で必ず訂正を送る。実クライアントでの解消は要確認。読み取り専用/権限不要の`/packingcube refillstatus`で両手の適用条件を確認できる。適用後の実機確認待ち。ほかの原因が残る場合は再現条件・ゲームモード・装着状況・診断結果を確認する。画像・モデル・装備位置・収納ルール・初期値・通信形式は変更しない。
+
+### Refill destination selection (PC-46)
+
+The source pouch and player inventory remain anchored at the same coordinates. Read-only
+armor/offhand previews sit on the right, active functional Curios previews on the left.
+Selection mode suppresses item actions and commits only a matching left press/release pair.
+Mark overlays use z210 before the floating settings window (z400); popup/cursor layers remain
+managed by FloatingWindow. Opacity feedback does not scale pixel art or move hit boxes.
+The client is a preview/selector, not an authority over equipment or refill transactions.
+
+While choosing destinations, the floating settings panel temporarily collapses so it cannot
+obscure right-hand equipment targets. A finish button stays in the pouch header; finishing
+or Esc restores settings with its prior floating position/size. No inventory slots move.
+
+### PC-47 source pages
+
+1–9 are source selection pages; Destination/Method are per source, Shared is pouch-wide.
+Destination confirmation is now single-shot (auto returns to normal item mode); the header
+button cancels instead of finishing a multi-target edit. Esc cancels without any configuration
+write. The selected source is marked using the existing artist PNG. No new textures needed.
+
+## PC-49：バッグ共通の装備サイドパネル
+
+補充ポーチ専用だったサイドパネルをバックパック・収納ポーチにも共通化した。通常モードのクリックはメニュー上の実装備スロットへ送信し、補充先指定モードのクリックは指定のみに使う。旧「表示専用」の制約は廃止。装備は右、Curiosは左、元の中央インベントリ位置は維持。操作・動的なCurios構成変更時の挙動は `BAG_EQUIPMENT.md` を参照。
+
+## PC-50：補充先選択の入力分離
+
+選択開始時に設定パネルのドラッグ・フォーカス・ウィンドウ移動状態を解除し、次のtickを待たず非表示の設定ウィジットを取り除く。選択モード中の押下・解放・ドラッグ・スクロールは、古い設定パネルや見本スロットの入力処理より先に処理する。非表示パネルの範囲や押下状態が選択確定の解放イベントを吸収しないようにする。
+
+選択開始時の補充元番号を固定し、確定パケットには現在のページ番号を読み直さず固定した番号を使う。保存形式、装備操作、素材は変更しない。
+
+## PC-51：選択枠のアニメーションと音
+
+- ホバー：`refill_target_hovered.png` を滑らかにフェード。
+- 押下：`refill_target_pressed.png` を重ね、ホールド中は維持、確定後も短く減衰。
+- 枠は18×18固定。ピクセルやアイコン、クリック範囲の拡縮・変形はしない。
+- 選択済みの青枠は引き続き設定中だけ表示する。
+- 共通の設定ボタンは既存SkinnedButtonのアニメーション/音を維持。選択枠・サイド装備枠のホバーと押下にも高めの静かなUI音を付ける。
+
+## PC-52：両ポーチの共通ボタン描画を統一
+
+- 収納ポーチ/補充ポーチの設定ボタンは共通SkinnedButtonでホバーの浮き上がり、押下の縮み・押し込みを描画する。
+- 設定パネルの再構築時に、位置・サイズ・種類が同じボタンのアニメーション/ホバー履歴を引き継ぐ。スナップショットやページ変更で押下直後の動きが消えないようにする。キャッシュは画面インスタンス内のみ、最大512項目。
+- 補充元1〜9とページのタブは通常ボタンのテクスチャを使い、実際のON/OFF設定だけスイッチのテクスチャを使う。
+- ホバーは毎フレームの実ヒット範囲から計算する。押下状態と180msのフィードバックを明示し、長押し中も押下の外観を維持する。
+- 通常の設定ボタンの押下音も共通の高め・小さめのUI音へ揃える。無効なボタンは発音しない。
+- 既存PNGを変更せず、通常ボタンの押下は既存の選択画像、スイッチと×はホバー画像を既定の代替画像にする。
+- `textures/gui/widgets/` に任意の `button_hovered.png`(20×20)、`button_pressed.png`(20×20)、`toggle_on_pressed.png` / `toggle_off_pressed.png`(40×12)、`close_pressed.png`(14×14) が存在する場合は対応する専用画像を使う。新規画像は必須でなく、存在しなければ上記代替画像を使う。リソース再読込で有無を再評価する。
+- PC51の補充先スロット枠は引き続き18×18の不透明度アニメーション。共通の設定ボタンとは別の表現である。
