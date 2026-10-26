@@ -1,0 +1,26 @@
+[
+  {
+    "path": "textures/item/filter_bag.png",
+    "width": 16,
+    "height": 16,
+    "sha256": "f7e4feced3ddd704286719a1153f348a20d0d6f883bf084a0ae378b922713bd3"
+  },
+  {
+    "path": "textures/gui/radial/slot_pressed.png",
+    "width": 36,
+    "height": 36,
+    "sha256": "88c7af9ca052715d5cd2732666805021d692e42b992f63997d776ed7ecedab64"
+  },
+  {
+    "path": "textures/gui/radial/slot_hovered.png",
+    "width": 36,
+    "height": 36,
+    "sha256": "01dddf43ac6e8942d641eb42bc7f9b3bf1d6c9e28d658ef17735dd2e403c252b"
+  },
+  {
+    "path": "textures/gui/radial/slot.png",
+    "width": 36,
+    "height": 36,
+    "sha256": "82c6d5262b8124f10c5886f73fa8544a0b26c182c8adcb2e6cd10eb73626e5e4"
+  }
+]

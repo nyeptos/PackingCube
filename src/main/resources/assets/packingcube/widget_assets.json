@@ -1,0 +1,122 @@
+[
+  {
+    "file": "button_normal.png",
+    "width": 20,
+    "height": 20,
+    "sha256": "f130103f8ab0a455a6aa095404b9370fddbd482f06d2ce08eeec93c498fc0ff8"
+  },
+  {
+    "file": "button_selected.png",
+    "width": 20,
+    "height": 20,
+    "sha256": "43230cb6a19e30d16ffaead350550ebea31d15c1a6b9077c496f42badd47ea3b"
+  },
+  {
+    "file": "button_selected_hovered.png",
+    "width": 20,
+    "height": 20,
+    "sha256": "ad9cf492ade0893600436d594f12beaac0be085f1d4eb8aeda6e84adae9d02d1"
+  },
+  {
+    "file": "close_normal.png",
+    "width": 14,
+    "height": 14,
+    "sha256": "b35b5d1fc7b0522185ec21ed621ef2b41ede0431e3431ce64422c95f5bbded8d"
+  },
+  {
+    "file": "close_hovered.png",
+    "width": 14,
+    "height": 14,
+    "sha256": "0a0ea3ba07079dd8327a6a51baa57736f773704f50e861d815edfeda648a27a2"
+  },
+  {
+    "file": "close_disabled.png",
+    "width": 14,
+    "height": 14,
+    "sha256": "b35b5d1fc7b0522185ec21ed621ef2b41ede0431e3431ce64422c95f5bbded8d"
+  },
+  {
+    "file": "toggle_on_normal.png",
+    "width": 40,
+    "height": 12,
+    "sha256": "225db5993d0502168b34a19097fb326556138b6c84406bd1f4c32c0e8ecccb9e"
+  },
+  {
+    "file": "toggle_on_hovered.png",
+    "width": 40,
+    "height": 12,
+    "sha256": "42db07f0565044ef5654f96279e3b9b320d1ff95aef88c435cf901fe2b89daf7"
+  },
+  {
+    "file": "toggle_on_disabled.png",
+    "width": 40,
+    "height": 12,
+    "sha256": "225db5993d0502168b34a19097fb326556138b6c84406bd1f4c32c0e8ecccb9e"
+  },
+  {
+    "file": "toggle_off_normal.png",
+    "width": 40,
+    "height": 12,
+    "sha256": "0b6caa9938098cd704a917d4f7c35892380d0272e52d5c494007242d10e0e641"
+  },
+  {
+    "file": "toggle_off_hovered.png",
+    "width": 40,
+    "height": 12,
+    "sha256": "acf5cf313bbe2389e602f724f327d206406dd6ccb54c5d1b25759b03b17fe850"
+  },
+  {
+    "file": "toggle_off_disabled.png",
+    "width": 40,
+    "height": 12,
+    "sha256": "0b6caa9938098cd704a917d4f7c35892380d0272e52d5c494007242d10e0e641"
+  },
+  {
+    "file": "search_normal.png",
+    "width": 20,
+    "height": 18,
+    "sha256": "5f23768e11ba2afeca6bbc6bb2fde17d6c0c92084ec4503c7fa685c39fe28108"
+  },
+  {
+    "file": "search_focused.png",
+    "width": 20,
+    "height": 18,
+    "sha256": "b6c638d11d5e5d37f00926cd20975306d6fa0d1adecdd51d779adf3b6bbb46b1"
+  },
+  {
+    "file": "search_disabled.png",
+    "width": 20,
+    "height": 18,
+    "sha256": "0e8e2faac101c9bd61e86c9e12779961f766faaf7f6ba330b48dc5c36f510dfc"
+  },
+  {
+    "file": "ghost_slot.png",
+    "width": 18,
+    "height": 18,
+    "sha256": "fbb4191f5a506f862f0901f9df584a35e493a36d884dab508ffa13b8c1b652f1"
+  },
+  {
+    "file": "scrollbar_track.png",
+    "width": 6,
+    "height": 12,
+    "sha256": "bb89dca8e70be1edfc50f26fe151e0b85ba32b39cc126bd85bbc197cfa8e80cf"
+  },
+  {
+    "file": "scrollbar_thumb_normal.png",
+    "width": 6,
+    "height": 12,
+    "sha256": "d0fe2c44067442f74764d46f725ed118ad5deba52e7d384b119b4d6eab6e4369"
+  },
+  {
+    "file": "scrollbar_thumb_hovered.png",
+    "width": 6,
+    "height": 12,
+    "sha256": "e6c5648b8e2ff74151d5a2caa54a5d5244ae654c38c27cf31bbcb5094fd5e80c"
+  },
+  {
+    "file": "scrollbar_thumb_dragging.png",
+    "width": 6,
+    "height": 12,
+    "sha256": "be11828214757f91339d2f12ef6a33a2b79d55f29ebde177276680a29486981a"
+  }
+]

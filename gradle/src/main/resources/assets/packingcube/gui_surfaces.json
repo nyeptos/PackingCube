@@ -1,0 +1,20 @@
+[
+  {
+    "path": "textures/gui/container/bag_inventory.png",
+    "width": 176,
+    "height": 132,
+    "sha256": "cf13fff371514c512a113c8386a71750bfeff0fa8402e4a0742102953f4cb1a5"
+  },
+  {
+    "path": "textures/gui/container/settings_panel.png",
+    "width": 244,
+    "height": 132,
+    "sha256": "7542ad869bf10756db9df69857a1a5165a997b48cfe5bab5b43f3199a1ec2c76"
+  },
+  {
+    "path": "textures/gui/radial/background.png",
+    "width": 220,
+    "height": 220,
+    "sha256": "cd32be9e91cb254b6a3c506c7722d8f6f6c6c9ea8d06062a3fad617a21f67523"
+  }
+]

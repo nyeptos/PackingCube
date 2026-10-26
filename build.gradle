@@ -10,6 +10,10 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    maven {
+        name = "Illusive Soulworks"
+        url = "https://maven.theillusivec4.top/"
+    }
 }
 
 base {
@@ -29,7 +33,7 @@ neoForge {
 
     // This line is optional. Access Transformers are automatically detected
     // accessTransformers.add('src/main/resources/META-INF/accesstransformer.cfg')
-
+    accessTransformers.from('src/main/resources/META-INF/accesstransformer.cfg')
     // Default run configurations.
     // These can be tweaked, removed, or duplicated as needed.
     runs {
@@ -96,6 +100,12 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
+    compileOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}:api"
+    // -PwithoutCurios=true verifies that the optional integration is actually optional.
+    if (!providers.gradleProperty('withoutCurios').map { it.toBoolean() }.getOrElse(false)) {
+        runtimeOnly "top.theillusivec4.curios:curios-neoforge:${curios_version}"
+    }
+
     // Example mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

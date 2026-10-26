@@ -19,3 +19,7 @@ hs_err_pid*
 
 # Common working directory
 run
+
+# Data generator cache and alternate data-run workspace
+src/generated/resources/.cache/
+run-data/
