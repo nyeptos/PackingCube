@@ -1,6 +1,7 @@
 package github.nyeptos.packingcube.bag;
 
 import github.nyeptos.packingcube.bag.filter.BagFilter;
+import github.nyeptos.packingcube.bag.refill.RefillSettings;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.core.component.DataComponents;
@@ -74,11 +75,33 @@ public final class BagInventory extends SimpleContainer {
     }
 
     public static boolean isPouch(ItemStack stack) {
-        return stack.is(ModItems.FILTER_BAG.get()) || stack.is(ModItems.REFILL_POUCH.get());
+        return stack.is(ModItems.STORAGE_POUCH.get()) || stack.is(ModItems.REFILL_POUCH.get());
     }
 
     public static boolean isBag(ItemStack stack) {
         return stack.is(ModItems.LARGE_BAG.get()) || isPouch(stack);
+    }
+
+    /**
+     * A returned item locks its slot so it is never supplied back. Emptying the slot, by hand or
+     * by any other move, releases the lock again.
+     */
+    @Override
+    public void setItem(int slot, ItemStack stack) {
+        super.setItem(slot, stack);
+        clearLockWhenEmpty(slot);
+    }
+
+    @Override
+    public ItemStack removeItem(int slot, int amount) {
+        ItemStack removed = super.removeItem(slot, amount);
+        clearLockWhenEmpty(slot);
+        return removed;
+    }
+
+    private void clearLockWhenEmpty(int slot) {
+        if (modules || !getItem(slot).isEmpty()) return;
+        if (RefillSettings.locked(bag, slot)) RefillSettings.setLocked(bag, slot, false);
     }
 
     @Override

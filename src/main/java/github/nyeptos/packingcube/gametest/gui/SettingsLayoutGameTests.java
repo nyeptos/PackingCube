@@ -163,14 +163,14 @@ public final class SettingsLayoutGameTests {
                     layout.height() == expectedHeight && layout.inventory().height() == 132,
                     h,
                     "Only right settings expands with screen space");
-            var close = layout.closeButton();
+            var close = layout.settingsClose();
             check(
-                    close.x() >= 0
+                    close.x() >= layout.inventory().right()
+                            && close.right() <= layout.width()
                             && close.y() >= 0
-                            && close.right() <= layout.inventory().right()
-                            && close.bottom() <= 17,
+                            && close.bottom() <= layout.viewport().y(),
                     h,
-                    "Close remains inside inventory header above slots");
+                    "Close sits inside the settings panel above the scrolling content");
             var background = layout.settingsBackground();
             check(
                     background.x() == 176 && background.height() == expectedHeight,

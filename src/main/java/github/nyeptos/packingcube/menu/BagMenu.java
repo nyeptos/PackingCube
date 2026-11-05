@@ -346,7 +346,7 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         ItemStack snapshot =
                 (modules
                                 ? ModItems.LARGE_BAG
-                                : refill ? ModItems.REFILL_POUCH : ModItems.FILTER_BAG)
+                                : refill ? ModItems.REFILL_POUCH : ModItems.STORAGE_POUCH)
                         .get()
                         .getDefaultInstance();
         if (!modules) {
@@ -585,16 +585,34 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         } else if (index < bagSlots) {
             if (!moveItemStackTo(stack, bagSlots, visibleSlotCount(), true)) return ItemStack.EMPTY;
         } else {
+            // An empty matching equipment/Curios slot wins over the bag. An occupied slot is never
+            // swapped out, so a full equipment set falls through to the normal bag stow.
+            equipIntoEmptySideSlot(stack);
             // Vanilla's merge-into-existing-stacks path does not call Slot.mayPlace.
             // Check before attempting any merge so old, now-disallowed contents cannot bypass the
             // filter.
-            if (!slots.get(0).mayPlace(stack) || !moveItemStackTo(stack, 0, bagSlots, false))
-                return ItemStack.EMPTY;
+            if (!stack.isEmpty() && slots.get(0).mayPlace(stack))
+                moveItemStackTo(stack, 0, bagSlots, false);
         }
         if (stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY);
         else slot.setChanged();
         if (stack.getCount() == original.getCount()) return ItemStack.EMPTY;
         slot.onTake(player, stack);
         return original;
+    }
+
+    /**
+     * Shift-click fills an empty equipment or Curios slot before the bag takes the stack. Side
+     * slots sit off-screen, so {@code isActive} stays false and the vanilla/Curios
+     * {@code mayPlace} decides whether the stack belongs there. Existing equipment is never
+     * removed or swapped, and the offhand stays a manual choice.
+     */
+    private void equipIntoEmptySideSlot(ItemStack stack) {
+        for (int index = sideStart; index < slots.size(); index++) {
+            Slot slot = slots.get(index);
+            if (slot.hasItem() || !slot.mayPlace(stack)) continue;
+            if (RefillTargets.inventory(40).equals(sideIds.get(index - sideStart))) continue;
+            if (moveItemStackTo(stack, index, index + 1, false)) return;
+        }
     }
 }

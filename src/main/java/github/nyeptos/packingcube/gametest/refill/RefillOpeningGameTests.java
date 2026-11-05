@@ -140,7 +140,7 @@ public final class RefillOpeningGameTests {
                     "Reassigned target persists after reopening");
         p.containerMenu = p.inventoryMenu;
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 45,
+                RefillDispatcher.tick(p) == 45,
                 "All nine nested sources actually refill");
         for (int i = 0; i < 9; i++)
             h.assertTrue(
@@ -165,7 +165,7 @@ public final class RefillOpeningGameTests {
         for (boolean refill : new boolean[] {false, true}) {
             var p = new OpeningPlayer(h);
             var pouch =
-                    (refill ? ModItems.REFILL_POUCH : ModItems.FILTER_BAG)
+                    (refill ? ModItems.REFILL_POUCH : ModItems.STORAGE_POUCH)
                             .get()
                             .getDefaultInstance();
             p.getInventory().setItem(0, pouch);

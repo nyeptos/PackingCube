@@ -1,0 +1,32 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_storage_pouch": {
+      "conditions": {
+        "items": [
+          {
+            "items": "packingcube:storage_pouch"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_the_recipe": {
+      "conditions": {
+        "recipe": "packingcube:refill_pouch"
+      },
+      "trigger": "minecraft:recipe_unlocked"
+    }
+  },
+  "requirements": [
+    [
+      "has_the_recipe",
+      "has_storage_pouch"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "packingcube:refill_pouch"
+    ]
+  }
+}

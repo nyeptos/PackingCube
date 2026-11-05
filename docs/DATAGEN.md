@@ -16,7 +16,7 @@
 
 - バックパックは`packingcube:item/backpack_equipped`を親にする薄いアイテムモデルを生成し、ユーザー制作の形状・UV・画像・Blockbenchのdisplayを継承する。生成ラッパーにdisplay／elements／texturesを重複させない。ポーチは引き続きバニラleatherの仮テクスチャ。
 - 背負い用32×32画像をアイテムにも共用する。モデル本体は`src/main/resources/assets/packingcube/models/item/backpack_equipped.json`、画像は`textures/item/backpack.png`。Blockbenchで表示設定を調整する場合はモデル本体のdisplayを更新し、生成JSONを直接編集しない。
-- 以前の `src/main/resources/assets/packingcube/models/item/{large_bag,filter_bag}.json` は削除し、同じリソースIDの生成版へ移した。二重管理しない。
+- 以前の `src/main/resources/assets/packingcube/models/item/{large_bag,storage_pouch}.json` は削除し、同じリソースIDの生成版へ移した。二重管理しない。
 
 自作テクスチャ `src/main/resources/assets/packingcube/textures/item/example.png` を使う新アイテムなら、レジストリ登録後に以下の形で追加する。
 
@@ -93,3 +93,16 @@ IDEAの `runData` を実行すると次を生成する。
 以前の `src/main/resources/assets/packingcube/lang/en_us.json` と `ja_jp.json` は削除する。同じ相対パスの翻訳を手書き側へ残さないこと。
 既存の翻訳キーと文言は両言語とも維持している。Minecraft標準キーやアイテムID・タグIDは翻訳定義に複製しない。
 画面での確認はMinecraftの言語を日本語／English (US)に切り替えて行う。
+
+## バッグのクラフトレシピ（PC-75）
+
+`ModRecipeProvider` に3つ定義した。runDataで `src/generated/resources/data/packingcube/recipe/` に出力される。
+
+| アイテム | レシピ |
+|---|---|
+| 収納ポーチ | `SLS` / `LCL` / ` L `（S=糸, L=革, C=チェスト） |
+| 補充ポーチ | `IHI` / ` P ` / ` R `（I=鉄, H=ホッパー, P=収納ポーチ, R=レッドストーン） |
+| 大バッグ | `LLL` / `LCL` / ` PP`（L=革, C=チェスト, P=収納ポーチ） |
+
+- 補充ポーチと大バッグは収納ポーチを素材にするので、ポーチを作る手間が上位アイテムに効く。
+- レシピブックの解放条件は、収納ポーチがチェスト、補充ポーチと大バッグが収納ポーチ。

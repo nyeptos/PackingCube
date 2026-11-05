@@ -29,7 +29,7 @@ public final class ModLanguageProvider extends LanguageProvider {
     protected void addTranslations() {
         translated("itemGroup.packingcube", "PackingCube", "PackingCube");
         translated("item.packingcube.large_bag", "Backpack", "バックパック");
-        translated("item.packingcube.filter_bag", "Storage Pouch", "収納ポーチ");
+        translated("item.packingcube.storage_pouch", "Storage Pouch", "収納ポーチ");
         translated(
                 "message.packingcube.hold_filter",
                 "Hold a Storage Pouch in your main hand.",
@@ -93,11 +93,6 @@ public final class ModLanguageProvider extends LanguageProvider {
                 "Filter mode changed to %s.",
                 "フィルターモードを%sに変更しました。");
         translated(
-                "gui.packingcube.ghost_help",
-                "Sample slot: left-click to copy the cursor item, right-click to clear. No physical"
-                        + " items are stored.",
-                "見本スロット：左クリックでカーソルのアイテムをコピー。右クリックで解除。実物は収納しません。");
-        translated(
                 "gui.packingcube.sample_short_help", "Left: copy / Right: clear", "左: コピー / 右: 解除");
         translated("gui.packingcube.stow_all", "Stow All", "一括収納");
         translated(
@@ -133,22 +128,11 @@ public final class ModLanguageProvider extends LanguageProvider {
         translated("gui.packingcube.refill_filter_on", "Refill filter: ON", "補充フィルター: ON");
         translated("gui.packingcube.refill_filter_off", "Refill filter: OFF", "補充フィルター: OFF");
         translated("gui.packingcube.refill_filter_heading", "Refill filter", "補充フィルター");
-        translated("gui.packingcube.refill_timing", "Refill condition: %s", "補充する条件: %s");
-        translated(
-                "gui.packingcube.refill_timing_empty",
-                "Refill when the hand is empty",
-                "手元が0個になったら補充");
-        translated(
-                "gui.packingcube.refill_timing_threshold",
-                "Refill at the chosen remaining count",
-                "手元が指定数以下なら補充");
-        translated("gui.packingcube.refill_timing_use", "After using a held item", "手持ちで使ったときに補充");
         translated(
                 "gui.packingcube.refill_threshold",
                 "Start refill at: %s remaining",
                 "補充開始: 残り%s個以下");
         translated("gui.packingcube.refill_target", "Hand count after refill: %s", "補充後の手元: %s");
-        translated("gui.packingcube.refill_full_stack", "1 stack", "1スタック");
         translated("gui.packingcube.refill_slot", "Refill hotbar slot %s", "ホットバー%s番を補充");
         translated("gui.packingcube.refill_page_destinations", "Slots", "補充先");
         translated("gui.packingcube.refill_status_main", "Main hand", "メインハンド");
@@ -211,24 +195,20 @@ public final class ModLanguageProvider extends LanguageProvider {
                 "取引には1回分の材料を補充します。売買は手動です。");
         translated(
                 "gui.packingcube.refill_threshold_label",
-                "Refill when hand count is at most:",
-                "補充を始める手元の残り個数");
-        translated("gui.packingcube.refill_threshold_count", "%s or fewer", "%s個以下");
+                "Start refill when the hand has at most",
+                "補充を始める残り個数");
+        translated("gui.packingcube.refill_threshold_count", "%s", "%s個");
         translated(
-                "gui.packingcube.refill_target_label", "Hand count after refill:", "補充後に手元に持つ個数");
+                "gui.packingcube.refill_target_label", "Hand count after refill", "補充後の手元の個数");
         translated("gui.packingcube.refill_item_count", "%s items", "%s個");
         translated(
-                "gui.packingcube.refill_amount_full",
-                "Fill hand to one full stack",
-                "手元を1スタックまで補充");
+                "gui.packingcube.refill_target_help",
+                "1-%s items, following the item's real stack size.",
+                "1〜%s個。アイテムの最大スタックに自動で合わせます。");
         translated(
-                "gui.packingcube.refill_amount_custom",
-                "Fill hand to a chosen count",
-                "手元を指定個数まで補充");
-        translated(
-                "gui.packingcube.refill_amount_help",
-                "Final hand count, not extra items.",
-                "追加数ではなく、補充後の手元の個数です。");
+                "gui.packingcube.refill_threshold_help",
+                "Refills up to the count above once the hand reaches this. 0 waits until empty.",
+                "残りがこの個数以下になったら上の個数まで補充します。0個は空になったときだけです。");
         translated(
                 "gui.packingcube.refill_priority_show", "Advanced: pouch priority", "詳細: ポーチの優先度");
         translated("gui.packingcube.refill_priority_hide", "Hide pouch priority", "優先度の設定を閉じる");
@@ -260,16 +240,12 @@ public final class ModLanguageProvider extends LanguageProvider {
                 "指定先は保存されます。空き枠への品目指定と補充先拡張の実動作は次の実装で対応します。");
         translated("gui.packingcube.refill_selected", "Selected destination", "補充先に指定済み");
         translated("gui.packingcube.refill_unselected", "Not selected", "未指定");
-        translated(
-                "gui.packingcube.equipment_controls",
-                "Click to equip / unequip; Shift-click to return to inventory",
-                "クリックで着脱・Shiftクリックでインベントリへ戻す");
         translated("gui.packingcube.refill_hotbar_index", "Hotbar %s", "ホットバー %s");
         translated("gui.packingcube.refill_inventory_index", "Inventory %s", "インベントリ %s");
-        translated("gui.packingcube.refill_slot_feet", "Feet", "防具：足");
-        translated("gui.packingcube.refill_slot_legs", "Legs", "防具：脚");
-        translated("gui.packingcube.refill_slot_chest", "Chest", "防具：胴");
-        translated("gui.packingcube.refill_slot_head", "Head", "防具：頭");
+        translated("gui.packingcube.refill_slot_feet", "Feet", "足");
+        translated("gui.packingcube.refill_slot_legs", "Legs", "脚");
+        translated("gui.packingcube.refill_slot_chest", "Chest", "胴");
+        translated("gui.packingcube.refill_slot_head", "Head", "頭");
         translated("gui.packingcube.refill_slot_offhand", "Offhand", "オフハンド");
         translated("gui.packingcube.refill_source_enabled_on", "Source %s: ON", "ポーチ%s番の補充：ON");
         translated("gui.packingcube.refill_source_enabled_off", "Source %s: OFF", "ポーチ%s番の補充：OFF");
@@ -280,20 +256,124 @@ public final class ModLanguageProvider extends LanguageProvider {
         translated(
                 "gui.packingcube.refill_replace_off", "Replace other items: OFF", "別のアイテムと置換：OFF");
         translated(
-                "gui.packingcube.refill_source_priority_help",
-                "Higher priority first. Ties: pouch order, then source 1–9. Other items return to"
-                        + " free inventory space; otherwise replacement is skipped.",
-                "優先度が高い枠を先に補充。同値はポーチ順→1〜9番。置換した元の品は指定先以外のインベントリへ戻し、空き不足なら中止します。");
+                "gui.packingcube.refill_collect_on",
+                "Collect swapped-out item: ON",
+                "外したアイテムを回収：ON");
         translated(
-                "gui.packingcube.refill_source_amount_help",
-                "This source only. Amount means final destination count, not quantity added. Empty"
-                        + " destinations fill automatically, including before first use.",
-                "この枠だけの設定です。個数は追加数ではなく補充後の個数。最初から空の補充先にも自動で入ります。");
+                "gui.packingcube.refill_collect_off",
+                "Collect swapped-out item: OFF",
+                "外したアイテムを回収：OFF");
         translated(
-                "gui.packingcube.refill_shared_help",
-                "Shared by the whole pouch: refill filter and trading. Per-source ON/OFF also"
-                        + " applies to trade supply.",
-                "補充フィルターと取引はポーチ共通です。各枠の補充OFFは取引への搬出も止めます。");
+                "gui.packingcube.refill_lock_on",
+                "Lock collected slot: ON",
+                "回収した枠をロック：ON");
+        translated(
+                "gui.packingcube.refill_lock_off",
+                "Lock collected slot: OFF",
+                "回収した枠をロック：OFF");
+        translated("gui.packingcube.refill_durability_off", "Durability: OFF", "耐久：OFF");
+        translated(
+                "gui.packingcube.refill_durability_percent",
+                "Durability: swap at %s%% left",
+                "耐久：残り%s％以下で入れ替え");
+        translated(
+                "gui.packingcube.refill_durability_count",
+                "Durability: swap at %s left",
+                "耐久：残り%s以下で入れ替え");
+        translated("gui.packingcube.refill_durability_label", "Durability limit", "耐久しきい値");
+        translated("gui.packingcube.help", "Help", "説明");
+        translated(
+                "gui.packingcube.refill_help_hint",
+                "Hover a button to read what it does.",
+                "説明を見たいボタンにカーソルを合わせてください。");
+        translated("gui.packingcube.refill_help_name_source", "Pouch slot", "ポーチ枠");
+        translated(
+                "gui.packingcube.refill_help_body_source",
+                "This slot holds the item to supply and where it goes.",
+                "この番号の枠が、出すアイテムと入れる先を持ちます。");
+        translated("gui.packingcube.refill_help_name_pages", "Pages", "ページ");
+        translated(
+                "gui.packingcube.refill_help_body_pages",
+                "Switch between destination, method and filter. Switching never changes settings.",
+                "補充先・補充方法・補充フィルターを切り替えます。切り替えても設定は変わりません。");
+        translated("gui.packingcube.refill_help_name_enabled", "Supply on/off", "補充ON/OFF");
+        translated(
+                "gui.packingcube.refill_help_body_enabled",
+                "Whether this slot supplies at all. Storage still works when off.",
+                "この枠が補充に使われるかどうか。OFFでも収納はできます。");
+        translated(
+                "gui.packingcube.refill_help_name_select", "Select destination", "補充先を選択");
+        translated(
+                "gui.packingcube.refill_help_body_select",
+                "Press it, then click an inventory or equipment slot to assign it.",
+                "押してから、インベントリか装備の枠をクリックして指定します。");
+        translated(
+                "gui.packingcube.refill_help_name_clear", "Clear destination", "補充先を解除");
+        translated(
+                "gui.packingcube.refill_help_body_clear",
+                "Sets this slot back to no destination.",
+                "この枠の補充先を未指定に戻します。");
+        translated("gui.packingcube.refill_help_name_replace", "Replace", "置換");
+        translated(
+                "gui.packingcube.refill_help_body_replace",
+                "Swaps out a different item. Off only fills empty destinations.",
+                "補充先に別のアイテムがあるとき入れ替えます。OFFなら空の枠にだけ入ります。");
+        translated("gui.packingcube.refill_help_name_collect", "Collect", "回収");
+        translated(
+                "gui.packingcube.refill_help_body_collect",
+                "The swapped-out item goes back into this pouch. Off sends it to your inventory.",
+                "入れ替えで外したアイテムを、このポーチへ戻します。OFFならインベントリへ戻します。");
+        translated("gui.packingcube.refill_help_name_lock", "Slot lock", "枠ロック");
+        translated(
+                "gui.packingcube.refill_help_body_lock",
+                "A slot holding a collected item stops supplying until you empty it.",
+                "回収したアイテムが入った枠は、空にするまで補充に使いません。");
+        translated(
+                "gui.packingcube.refill_help_name_durability_mode",
+                "Durability limit",
+                "耐久しきい値");
+        translated(
+                "gui.packingcube.refill_help_body_durability_mode",
+                "Off swaps as soon as the data differs. Percent and count wait until the item in"
+                        + " place is nearly spent. Other items are never delayed.",
+                "OFFならデータが違えばすぐ入れ替えます。％と実数は、補充先の残り耐久が指定値以下に"
+                        + "なるまで待ちます。別アイテムの置換は待ちません。");
+        translated(
+                "gui.packingcube.refill_help_name_durability_value",
+                "Durability value",
+                "耐久の値");
+        translated(
+                "gui.packingcube.refill_help_body_durability_value",
+                "Percent uses the share left; count uses the remaining points. 1 is risky because"
+                        + " the item can break before the next tick.",
+                "％は残りの割合、実数は残りの点数で比べます。1は次のtickまでに壊れて消えることが"
+                        + "あるので注意してください。");
+        translated("gui.packingcube.refill_help_name_priority", "Priority", "優先度");
+        translated(
+                "gui.packingcube.refill_help_body_priority",
+                "Higher numbers supply first. Ties: pouch order, then slots 1-9.",
+                "数字が大きい枠から補充します。同じならポーチ順、次に1〜9番の順です。");
+        translated("gui.packingcube.refill_help_name_target", "Final count", "補充後の個数");
+        translated(
+                "gui.packingcube.refill_help_body_target",
+                "What you hold after refilling, up to that item's stack limit.",
+                "補充が終わったときに手元に持つ個数。上限はそのアイテムの最大スタックです。");
+        translated("gui.packingcube.refill_help_name_threshold", "Remaining", "残り個数");
+        translated(
+                "gui.packingcube.refill_help_body_threshold",
+                "Refill when the count drops to this or below. 0 waits until empty.",
+                "手元がこの数以下になったら補充します。0なら空になったときだけです。");
+        translated(
+                "gui.packingcube.refill_help_name_filter", "Refill filter", "補充フィルター");
+        translated(
+                "gui.packingcube.refill_help_body_filter",
+                "Limits what leaves the pouch by the rules you register. Storage is never limited.",
+                "ポーチから出すアイテムを、登録した条件で制限します。収納は制限しません。");
+        translated("gui.packingcube.refill_help_name_trade", "Trading", "取引");
+        translated(
+                "gui.packingcube.refill_help_body_trade",
+                "Trade materials follow the same rules. Off offers all stock.",
+                "取引で出す材料も同じ条件で制限します。OFFならすべての在庫が候補です。");
         translated("gui.packingcube.refill_select_cancel", "Cancel", "キャンセル");
         translated(
                 "gui.packingcube.refill_selecting_source",

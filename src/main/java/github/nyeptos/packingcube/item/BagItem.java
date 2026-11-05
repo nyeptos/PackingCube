@@ -39,16 +39,10 @@ public final class BagItem extends Item {
                                     + (RefillSettings.offhandEnabled(stack) ? "on" : "off")));
             lines.add(
                     Component.translatable(
-                            "gui.packingcube.refill_timing",
-                            Component.translatable(
-                                    "gui.packingcube.refill_timing_"
-                                            + RefillSettings.timing(stack))));
+                            "gui.packingcube.refill_target", RefillSettings.target(stack)));
             lines.add(
                     Component.translatable(
-                            "gui.packingcube.refill_target",
-                            RefillSettings.target(stack) == 0
-                                    ? Component.translatable("gui.packingcube.refill_full_stack")
-                                    : RefillSettings.target(stack)));
+                            "gui.packingcube.refill_threshold", RefillSettings.threshold(stack)));
             lines.add(
                     Component.translatable(
                             "gui.packingcube.refill_hotbar_"

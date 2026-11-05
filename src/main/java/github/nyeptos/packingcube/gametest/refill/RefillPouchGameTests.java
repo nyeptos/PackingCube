@@ -61,8 +61,8 @@ public final class RefillPouchGameTests {
     private static ItemStack refill(ItemStack... stacks) {
         var pouch = LegacyRefillFixture.pouch();
         // Keep the old scenario's 3-item ceiling explicit under the new user-configurable policy.
-        RefillSettings.set(pouch, "timing", "use");
         RefillSettings.set(pouch, "target", "3");
+        RefillSettings.set(pouch, "threshold", "2");
         var inventory = contents(pouch);
         for (int i = 0; i < stacks.length; i++) inventory.setItem(i, stacks[i]);
         return pouch;
@@ -110,7 +110,7 @@ public final class RefillPouchGameTests {
         h.assertTrue(
                 BagFilter.matches(pouch, new ItemStack(Items.STONE))
                         && !BagFilter.matches(
-                                ModItems.FILTER_BAG.get().getDefaultInstance(),
+                                ModItems.STORAGE_POUCH.get().getDefaultInstance(),
                                 new ItemStack(Items.STONE)),
                 "Refill initially accepts items; normal pouch defaults unchanged");
         h.assertTrue(
@@ -264,7 +264,7 @@ public final class RefillPouchGameTests {
         var low = refill(new ItemStack(Items.STONE, 5));
         var high = refill(new ItemStack(Items.STONE, 1));
         BagPickupSettings.setPriority(high, 9);
-        var ordinary = ModItems.FILTER_BAG.get().getDefaultInstance();
+        var ordinary = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         contents(ordinary).setItem(0, new ItemStack(Items.STONE, 20));
         var root = install(p, low, high, ordinary);
         p.getInventory().selected = 0;
@@ -373,9 +373,9 @@ public final class RefillPouchGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void refillPouchesDoNotAutoPickupButAllowManualStow(GameTestHelper h) {
+    public static void refillPouchesIgnorePickupAndBulkStow(GameTestHelper h) {
         var p = player(h);
-        var root = install(p, refill());
+        var root = install(p, refill(new ItemStack(Items.BREAD, 3)));
         h.assertTrue(
                 BagRouter.route(p, new ItemStack(Items.STONE, 4)).getCount() == 4,
                 "Supply pouch doesn't silently collect loot");
@@ -383,8 +383,11 @@ public final class RefillPouchGameTests {
         p.containerMenu = menu;
         p.getInventory().setItem(9, new ItemStack(Items.STONE, 4));
         h.assertTrue(
-                menu.stowAll(p, 8) == 4 && count(root, 0, 0) == 4,
-                "Explicit manual stow can stock refill pouches without a storage filter");
+                menu.stowAll(p, 8) == 0 && count(root, 0, 0) == 3,
+                "Bulk stow never stocks refill pouches or touches their contents");
+        h.assertTrue(
+                p.getInventory().getItem(9).getCount() == 4,
+                "The stack stays in the inventory when no storage pouch accepts it");
         h.succeed();
     }
 

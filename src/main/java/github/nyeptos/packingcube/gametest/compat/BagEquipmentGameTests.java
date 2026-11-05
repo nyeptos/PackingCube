@@ -20,7 +20,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 public final class BagEquipmentGameTests {
     private static BagMenu open(Player player, boolean backpack) {
         ItemStack root =
-                (backpack ? ModItems.LARGE_BAG : ModItems.FILTER_BAG).get().getDefaultInstance();
+                (backpack ? ModItems.LARGE_BAG : ModItems.STORAGE_POUCH).get().getDefaultInstance();
         player.getInventory().setItem(0, root);
         var menu =
                 new BagMenu(

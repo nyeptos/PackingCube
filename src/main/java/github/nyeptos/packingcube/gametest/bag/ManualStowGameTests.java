@@ -6,6 +6,7 @@ import github.nyeptos.packingcube.Packingcube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.bag.pickup.BagPickupSettings;
+import github.nyeptos.packingcube.gametest.support.LegacyRefillFixture;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.network.BagStowPayload;
 import github.nyeptos.packingcube.registry.ModItems;
@@ -43,7 +44,7 @@ public final class ManualStowGameTests {
     }
 
     private static ItemStack pouch(int priority) {
-        var stack = ModItems.FILTER_BAG.get().getDefaultInstance();
+        var stack = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         BagFilter.add(stack, "items", ResourceLocation.withDefaultNamespace("stone"));
         BagPickupSettings.setPriority(stack, priority);
         return stack;
@@ -170,11 +171,11 @@ public final class ManualStowGameTests {
     @GameTest(template = "empty")
     public static void tagsExcludeAndNoNestedContainerRulesAreShared(GameTestHelper h) {
         var player = player(h);
-        var tagPouch = ModItems.FILTER_BAG.get().getDefaultInstance();
+        var tagPouch = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         BagFilter.add(tagPouch, "tags", ResourceLocation.withDefaultNamespace("logs"));
         var excludePouch = pouch(0);
         BagFilter.setExcluding(excludePouch, true);
-        var emptyInclude = ModItems.FILTER_BAG.get().getDefaultInstance();
+        var emptyInclude = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         BagPickupSettings.setPriority(tagPouch, 9);
         var root = install(player, emptyInclude, tagPouch, excludePouch);
         var inv = player.getInventory();
@@ -351,6 +352,41 @@ public final class ManualStowGameTests {
                             "New string generated for " + lang + ": " + key);
             }
         }
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void refillPouchesAreNotBulkStowDestinations(GameTestHelper h) {
+        var player = player(h);
+        var storage = pouch(0);
+        var refill = LegacyRefillFixture.pouch();
+        contents(refill).setItem(0, new ItemStack(Items.BREAD, 3));
+        var root = install(player, storage, refill);
+        var inv = player.getInventory();
+        inv.setItem(9, new ItemStack(Items.STONE, 10));
+        var menu = open(player, root);
+        h.assertTrue(
+                menu.stowAll(player, 42) == 10 && count(root, 0) == 10,
+                "Storage pouches still take the whole stack");
+        h.assertTrue(
+                count(root, 1) == 3, "The refill pouch keeps its own contents");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void overflowStaysInTheInventoryInsteadOfRefillPouches(GameTestHelper h) {
+        var player = player(h);
+        var storage = pouch(0);
+        var refill = LegacyRefillFixture.pouch();
+        var root = install(player, storage, refill);
+        room(root, 0, 4);
+        var inv = player.getInventory();
+        inv.setItem(9, new ItemStack(Items.STONE, 10));
+        var menu = open(player, root);
+        h.assertTrue(menu.stowAll(player, 42) == 4, "Only the free storage space moves");
+        h.assertTrue(
+                inv.getItem(9).getCount() == 6 && count(root, 1) == 0,
+                "The remainder stays in the inventory, not in the refill pouch");
         h.succeed();
     }
 }

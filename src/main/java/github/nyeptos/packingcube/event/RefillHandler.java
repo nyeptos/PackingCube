@@ -114,7 +114,7 @@ public final class RefillHandler {
                 if (age >= 0 && age <= 1) RefillService.hand(player, entry.slot(), entry.before());
             }
         if (!consumed.isEmpty() || player.level().getGameTime() % 5 == 0)
-            RefillDispatcher.tick(player, consumed);
+            RefillDispatcher.tick(player);
         RefillService.trade(player);
     }
 }

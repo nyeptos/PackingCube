@@ -91,7 +91,7 @@ public final class RadialPouchArtGameTests {
     public static void pouchItemModelReferencesArtistTexture(GameTestHelper h) throws Exception {
         try (var reader =
                 new InputStreamReader(
-                        resource("models/item/filter_bag.json"), StandardCharsets.UTF_8)) {
+                        resource("models/item/storage_pouch.json"), StandardCharsets.UTF_8)) {
             var model = JsonParser.parseReader(reader).getAsJsonObject();
             h.assertTrue(
                     model.get("parent").getAsString().equals("minecraft:item/generated"),
@@ -100,7 +100,7 @@ public final class RadialPouchArtGameTests {
                     model.getAsJsonObject("textures")
                             .get("layer0")
                             .getAsString()
-                            .equals("packingcube:item/filter_bag"),
+                            .equals("packingcube:item/storage_pouch"),
                     "Pouch no longer renders vanilla leather");
         }
         h.succeed();

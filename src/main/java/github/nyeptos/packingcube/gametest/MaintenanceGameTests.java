@@ -17,9 +17,12 @@ import github.nyeptos.packingcube.registry.ModMenus;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
@@ -108,8 +111,10 @@ public final class MaintenanceGameTests {
                 BuiltInRegistries.ITEM.getKey(ModItems.LARGE_BAG.get()).equals(id("large_bag")),
                 "Big Bag ID unchanged");
         helper.assertTrue(
-                BuiltInRegistries.ITEM.getKey(ModItems.FILTER_BAG.get()).equals(id("filter_bag")),
-                "Filter Bag ID unchanged");
+                BuiltInRegistries.ITEM
+                        .getKey(ModItems.STORAGE_POUCH.get())
+                        .equals(id("storage_pouch")),
+                "Storage pouch uses the renamed ID");
         helper.assertTrue(
                 BuiltInRegistries.ITEM
                         .getKey(ModItems.REFILL_POUCH.get())
@@ -141,7 +146,7 @@ public final class MaintenanceGameTests {
     @GameTest(template = "empty")
     public static void registryDefaultsRemainUnchanged(GameTestHelper helper) {
         for (var item :
-                java.util.List.of(ModItems.LARGE_BAG, ModItems.FILTER_BAG, ModItems.REFILL_POUCH)) {
+                java.util.List.of(ModItems.LARGE_BAG, ModItems.STORAGE_POUCH, ModItems.REFILL_POUCH)) {
             helper.assertTrue(
                     item.get().getDefaultInstance().getMaxStackSize() == 1,
                     "All bags remain unstackable");
@@ -162,7 +167,7 @@ public final class MaintenanceGameTests {
         var player = new RecordingPlayer(helper);
         ItemStack root = ModItems.LARGE_BAG.get().getDefaultInstance();
         var contents = new BagInventory(root, true, () -> {});
-        contents.setItem(0, ModItems.FILTER_BAG.get().getDefaultInstance());
+        contents.setItem(0, ModItems.STORAGE_POUCH.get().getDefaultInstance());
         player.getInventory().setItem(0, root);
         helper.assertTrue(EquippedBagAccess.openDirect(player), "B opens Big Bag");
         helper.assertTrue(player.soundCount == 1, "Direct open has one sound");
@@ -215,7 +220,7 @@ public final class MaintenanceGameTests {
         helper.assertFalse(EquippedBagAccess.openDirect(player), "Carried item rejects shortcut");
         helper.assertTrue(player.soundCount == 0, "Rejected request silent");
         player.containerMenu.setCarried(ItemStack.EMPTY);
-        ItemStack filter = ModItems.FILTER_BAG.get().getDefaultInstance();
+        ItemStack filter = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         player.getInventory().setItem(1, filter);
         var storage = new BagInventory(filter, false, () -> {});
         helper.assertTrue(
@@ -223,6 +228,22 @@ public final class MaintenanceGameTests {
                 "Filter menu still opens");
         helper.assertTrue(player.soundCount == 0, "Only Big Bag receives leather open sound");
         helper.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void legacyFilterBagIdLoadsAsStoragePouch(GameTestHelper h) {
+        h.assertTrue(
+                BuiltInRegistries.ITEM.get(id("filter_bag")) == ModItems.STORAGE_POUCH.get(),
+                "The old registry name resolves through the alias");
+        CompoundTag saved = new CompoundTag();
+        saved.putString("id", "packingcube:filter_bag");
+        saved.putInt("count", 1);
+        var ops = RegistryOps.create(NbtOps.INSTANCE, h.getLevel().registryAccess());
+        ItemStack loaded = ItemStack.CODEC.parse(ops, saved).result().orElse(ItemStack.EMPTY);
+        h.assertTrue(
+                loaded.is(ModItems.STORAGE_POUCH.get()),
+                "A saved filter_bag stack loads as the storage pouch");
+        h.succeed();
     }
 
     private static ResourceLocation id(String path) {

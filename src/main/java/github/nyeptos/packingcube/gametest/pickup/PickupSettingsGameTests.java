@@ -34,7 +34,7 @@ public final class PickupSettingsGameTests {
     }
 
     private static ItemStack pouch(int priority) {
-        ItemStack pouch = ModItems.FILTER_BAG.get().getDefaultInstance();
+        ItemStack pouch = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         BagFilter.add(pouch, "items", ResourceLocation.withDefaultNamespace("stone"));
         BagPickupSettings.setPriority(pouch, priority);
         return pouch;
@@ -87,7 +87,7 @@ public final class PickupSettingsGameTests {
 
     @GameTest(template = "empty")
     public static void missingSettingsPreservePreviousDefaults(GameTestHelper h) {
-        ItemStack pouch = ModItems.FILTER_BAG.get().getDefaultInstance();
+        ItemStack pouch = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         h.assertTrue(
                 BagPickupSettings.enabled(pouch) && BagPickupSettings.priority(pouch) == 0,
                 "Old pouches remain enabled at priority zero");
@@ -201,7 +201,7 @@ public final class PickupSettingsGameTests {
     @GameTest(template = "empty")
     public static void automaticPickupUsesTagRules(GameTestHelper h) {
         var player = player(h);
-        ItemStack logs = ModItems.FILTER_BAG.get().getDefaultInstance();
+        ItemStack logs = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         BagFilter.add(logs, "tags", ResourceLocation.withDefaultNamespace("logs"));
         install(player, 0, logs);
         h.assertTrue(

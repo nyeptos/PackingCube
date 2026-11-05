@@ -170,8 +170,8 @@ public final class RefillRealUseGameTests {
         var p = new Actor(h.getLevel());
         var root = install(p, new ItemStack(Items.STONE, 8));
         var modules = new BagInventory(root, true, () -> {});
-        RefillSettings.set(modules.getItem(0), "timing", "use");
         RefillSettings.set(modules.getItem(0), "target", "16");
+        RefillSettings.set(modules.getItem(0), "threshold", "15");
         modules.setChanged();
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STONE, 16));
         var mirror = new ClientMirror();
@@ -223,8 +223,8 @@ public final class RefillRealUseGameTests {
         var pouch = parent.getItem(0);
         github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(
                 pouch, 0, "destination", "inventory:0");
-        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(pouch, 0, "timing", "use");
         github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(pouch, 0, "target", "16");
+        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(pouch, 0, "threshold", "15");
         parent.setChanged();
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STONE, 16));
         var mirror = new ClientMirror();

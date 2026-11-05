@@ -33,7 +33,10 @@ public final class BagRouter {
         return insertOrdered(destinations, remainder);
     }
 
-    /** Explicit manual action: one existing live parent, including auto-pickup-disabled pouches. */
+    /**
+     * Explicit manual action: one existing live parent, including auto-pickup-disabled storage
+     * pouches. Refill pouches are stocked by hand only, so bulk stow never targets them.
+     */
     public static ItemStack routeManual(BagInventory parent, ItemStack incoming) {
         ItemStack remainder = incoming.copy();
         if (!parent.bagStack().is(ModItems.LARGE_BAG.get())
@@ -78,10 +81,11 @@ public final class BagRouter {
             boolean automatic) {
         for (int slot = 0; slot < modules.getContainerSize(); slot++) {
             ItemStack module = modules.getItem(slot);
-            if ((automatic ? module.is(ModItems.FILTER_BAG.get()) : BagInventory.isPouch(module))
-                    && (!automatic || BagPickupSettings.enabled(module))
-                    && (module.is(ModItems.REFILL_POUCH.get())
-                            || BagFilter.matches(module, incoming))) {
+            // Refill pouches never take routed inserts, neither pickup nor bulk stow. Their nine
+            // slots stay under manual control so supplies are not silently filled with loot.
+            if (!module.is(ModItems.STORAGE_POUCH.get())) continue;
+            if (automatic && !BagPickupSettings.enabled(module)) continue;
+            if (BagFilter.matches(module, incoming)) {
                 destinations.add(new Destination(module, modules));
             }
         }

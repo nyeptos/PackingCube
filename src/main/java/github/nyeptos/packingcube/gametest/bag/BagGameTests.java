@@ -28,7 +28,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 @PrefixGameTestTemplate(false)
 public final class BagGameTests {
     private static ItemStack filter() {
-        return ModItems.FILTER_BAG.get().getDefaultInstance();
+        return ModItems.STORAGE_POUCH.get().getDefaultInstance();
     }
 
     private static ItemStack carrier() {
@@ -213,8 +213,8 @@ public final class BagGameTests {
         modules.setItem(1, filter());
         BagInventory saved = modules(player.getInventory().getItem(1));
         helper.assertTrue(
-                saved.getItem(0).is(ModItems.FILTER_BAG.get())
-                        && saved.getItem(1).is(ModItems.FILTER_BAG.get()),
+                saved.getItem(0).is(ModItems.STORAGE_POUCH.get())
+                        && saved.getItem(1).is(ModItems.STORAGE_POUCH.get()),
                 "Further writes follow the moved root");
         helper.succeed();
     }
@@ -734,12 +734,12 @@ public final class BagGameTests {
         player.containerMenu = menu;
         menu.clicked(37, 0, ClickType.SWAP, player);
         helper.assertTrue(
-                player.getInventory().getItem(1).is(ModItems.FILTER_BAG.get()),
+                player.getInventory().getItem(1).is(ModItems.STORAGE_POUCH.get()),
                 "Number-key swap moves bag");
         helper.assertTrue(menu.stillValid(player), "Number-key movement keeps menu valid");
         menu.clicked(37, 40, ClickType.SWAP, player);
         helper.assertTrue(
-                player.getInventory().getItem(40).is(ModItems.FILTER_BAG.get()),
+                player.getInventory().getItem(40).is(ModItems.STORAGE_POUCH.get()),
                 "Offhand swap moves bag");
         helper.assertTrue(menu.stillValid(player), "Offhand movement keeps menu valid");
         contents.setItem(0, new ItemStack(Items.DIAMOND, 3));
@@ -795,7 +795,7 @@ public final class BagGameTests {
         helper.assertTrue(menu.stillValid(player), "Copied ItemStack identity is tracked");
         contents.setItem(0, filter());
         helper.assertTrue(
-                modules(moved).getItem(0).is(ModItems.FILTER_BAG.get()),
+                modules(moved).getItem(0).is(ModItems.STORAGE_POUCH.get()),
                 "Writes bind to current ItemStack");
         player.getInventory().setItem(4, moved.copy());
         helper.assertFalse(

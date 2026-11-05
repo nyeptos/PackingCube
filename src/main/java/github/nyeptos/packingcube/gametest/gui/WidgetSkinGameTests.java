@@ -35,8 +35,8 @@ public final class WidgetSkinGameTests {
                 new InputStreamReader(resource("widget_assets.json"), StandardCharsets.UTF_8)) {
             var assets = JsonParser.parseReader(reader).getAsJsonArray();
             h.assertTrue(
-                    assets.size() == 20 && WidgetSkin.values().length == 20,
-                    "All twenty supplied assets are packaged");
+                    assets.size() == 24 && WidgetSkin.values().length == 24,
+                    "All twenty-four supplied assets are packaged");
             for (var entry : assets) {
                 var item = entry.getAsJsonObject();
                 String name = item.get("file").getAsString();

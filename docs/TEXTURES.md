@@ -39,7 +39,7 @@ PC-36でbag_inventory/settings_panel/radial backgroundの3枚も受領・適用�
 
 | 保存先（assets/packingcube/textures/以下） | 幅×高さ | 描く内容 |
 |---|---|---|
-| item/filter_bag.png | 16×16 | 小さな収納ポーチ。ラジアル等でも使う |
+| item/storage_pouch.png | 16×16 | 収納ポーチ。ラジアル等でも使う（PC-58でファイル名のみ変更） |
 | gui/container/bag_inventory.png | 176×132 | 収納9枠＋プレイヤー27枠＋ホットバー9枠の背景、文字・ボタンなし |
 | gui/container/settings_panel.png | 244×132 | 独立設定ウィンドウの背景。タイトルバーの帯・文字・見本枠・ボタンなし。四辺4px固定で伸縮 |
 | gui/radial/background.png | 220×220 | ラジアル背景・装飾。輪・バッグ枠・文字・アイテムなし |

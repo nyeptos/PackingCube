@@ -4,7 +4,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
-import github.nyeptos.packingcube.gui.animation.SlotButtonAnimation;
+import github.nyeptos.packingcube.gui.animation.SlotFeedback;
 import github.nyeptos.packingcube.gui.input.RefillTargetInteraction;
 import github.nyeptos.packingcube.gui.skin.WidgetSkin;
 import github.nyeptos.packingcube.menu.BagMenu;
@@ -18,10 +18,7 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /** Shared equipment side panel. Normal clicks use synchronized menu slots; selection is opt-in. */
 public final class RefillTargetPanel {
@@ -45,10 +42,11 @@ public final class RefillTargetPanel {
         InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD
     };
     private final RefillTargetInteraction interaction = new RefillTargetInteraction();
+    private final SlotFeedback feedback = new SlotFeedback();
     private List<Target> targets = List.of();
+    private List<Target> marks = List.of();
     private int left, top, curiosLeft, curiosWidth, scroll, total;
     private boolean scrollbarDragging, scrollbarHovered;
-    private String hovered;
     private int source;
 
     public void source(int value) {
@@ -57,12 +55,6 @@ public final class RefillTargetPanel {
 
     private boolean selected(BagMenu menu, String id) {
         return RefillSlotSettings.get(menu.filterSnapshot(), source).destination().equals(id);
-    }
-
-    private final Map<String, SlotButtonAnimation> animations = new HashMap<>();
-
-    private SlotButtonAnimation animation(String id) {
-        return animations.computeIfAbsent(id, ignored -> new SlotButtonAnimation());
     }
 
     private static ResourceLocation texture(String file) {
@@ -75,8 +67,7 @@ public final class RefillTargetPanel {
 
     public void beginSelection(int source) {
         interaction.begin(source);
-        hovered = null;
-        animations.clear();
+        feedback.clear();
     }
 
     public int selectionSource() {
@@ -85,7 +76,7 @@ public final class RefillTargetPanel {
 
     public void selecting(boolean value) {
         interaction.selecting(value);
-        hovered = null;
+        feedback.clear();
     }
 
     public void update(BagMenu menu, int left, int top) {
@@ -94,6 +85,7 @@ public final class RefillTargetPanel {
         var player = Minecraft.getInstance().player;
         if (player == null) {
             targets = List.of();
+            marks = List.of();
             return;
         }
         List<Target> current = new ArrayList<>();
@@ -132,10 +124,29 @@ public final class RefillTargetPanel {
                             t.icon()));
         }
         targets = List.copyOf(current);
+        // Every visible slot reacts to hover and press, not only the refill destinations. The
+        // pouch and inventory slots are marks only; they never become destinations.
+        List<Target> all = new ArrayList<>();
+        for (int i = 0; i < menu.visibleSlotCount(); i++) {
+            var slot = menu.getSlot(i);
+            all.add(
+                    new Target(
+                            "slot:" + i,
+                            left + slot.x - 1,
+                            top + slot.y - 1,
+                            slot.getItem(),
+                            null));
+        }
+        all.addAll(targets);
+        marks = List.copyOf(all);
+    }
+
+    private static Target at(List<Target> list, double x, double y) {
+        return list.stream().filter(t -> t.contains(x, y)).findFirst().orElse(null);
     }
 
     private Target at(double x, double y) {
-        return targets.stream().filter(t -> t.contains(x, y)).findFirst().orElse(null);
+        return at(targets, x, y);
     }
 
     public net.minecraft.world.inventory.Slot hoveredSlot(BagMenu menu, double x, double y) {
@@ -192,26 +203,14 @@ public final class RefillTargetPanel {
             int mouseY,
             boolean obstructed,
             boolean configuring) {
-        Target hit =
-                !obstructed && (selecting() || overSide(mouseX, mouseY))
-                        ? at(mouseX, mouseY)
-                        : null;
-        String next = hit == null ? null : hit.id();
-        if (!Objects.equals(hovered, next)) {
-            hovered = next;
-            if (hovered != null) UiInteractionSounds.hover();
-        }
+        Target hit = obstructed ? null : at(marks, mouseX, mouseY);
+        if (feedback.enter(hit == null ? null : hit.id())) UiInteractionSounds.hover();
         long now = Util.getMillis();
         g.pose().pushPose();
         g.pose().translate(0, 0, 210);
-        for (Target target : targets) {
+        for (Target target : marks) {
             if (configuring && selected(menu, target.id())) drawAlpha(g, SELECTED, target, 1);
-            var frame =
-                    animation(target.id())
-                            .sample(
-                                    now,
-                                    target.id().equals(hovered),
-                                    interaction.pressed(target.id()));
+            var frame = feedback.frame(target.id(), now, interaction.pressed(target.id()));
             if (frame.hover() > .001F) drawAlpha(g, HOVERED, target, .7F * frame.hover());
             if (frame.press() > .001F) drawAlpha(g, PRESSED, target, .85F * frame.press());
         }
@@ -248,14 +247,14 @@ public final class RefillTargetPanel {
             Target target = at(x, y);
             interaction.press(target == null ? null : target.id(), button);
             if (target != null && button == 0) {
-                animation(target.id()).press(Util.getMillis());
+                feedback.press(target.id());
                 UiInteractionSounds.grab();
             }
             return true; // Also suppress pickup, quick craft and drop outside the inventory.
         }
-        Target target = overSide(x, y) ? at(x, y) : null;
+        Target target = at(marks, x, y);
         if (target != null && (button == 0 || button == 1)) {
-            animation(target.id()).press(Util.getMillis());
+            feedback.press(target.id());
             UiInteractionSounds.grab();
         }
         return false;
@@ -265,7 +264,7 @@ public final class RefillTargetPanel {
         if (button == 0) scrollbarDragging = false;
         Target target = at(x, y);
         String result = interaction.release(target == null ? null : target.id(), button);
-        if (result != null) animation(result).press(Util.getMillis());
+        if (result != null) feedback.press(result);
         return result;
     }
 
@@ -301,22 +300,39 @@ public final class RefillTargetPanel {
         var font = Minecraft.getInstance().font;
         var lines = new ArrayList<Component>();
         if (!target.stack().isEmpty()) lines.add(target.stack().getHoverName());
-        lines.add(targetName(target.id()));
-        if (!selecting()) {
-            lines.add(Component.translatable("gui.packingcube.equipment_controls"));
-            g.renderComponentTooltip(font, lines, x, y);
-            return;
-        }
-        lines.add(
-                Component.translatable(
-                        "gui.packingcube."
-                                + (selected(menu, target.id())
-                                        ? "refill_selected"
-                                        : "refill_unselected")));
+        lines.add(targetName(target.id(), sideIds(menu)));
+        if (selecting())
+            lines.add(
+                    Component.translatable(
+                            "gui.packingcube."
+                                    + (selected(menu, target.id())
+                                            ? "refill_selected"
+                                            : "refill_unselected")));
         g.renderComponentTooltip(font, lines, x, y);
     }
 
+    /** Every side-slot id of the open menu, in panel order. */
+    public static List<String> sideIds(BagMenu menu) {
+        List<String> ids = new ArrayList<>();
+        for (var target : menu.curiosTargets()) ids.add(target.id());
+        for (int slot : EQUIPMENT_SLOTS) ids.add(RefillTargets.inventory(slot));
+        return ids;
+    }
+
+    /** Only several slots of one type need a number to stay distinguishable. */
+    public static boolean needsIndex(String id, List<String> sideIds) {
+        if (!id.startsWith("curios:")) return false;
+        String type = id.substring(0, id.lastIndexOf(':') + 1);
+        int count = 0;
+        for (String other : sideIds) if (other.startsWith(type)) count++;
+        return count > 1;
+    }
+
     public static Component targetName(String id) {
+        return targetName(id, List.of(id));
+    }
+
+    public static Component targetName(String id, List<String> sideIds) {
         if (id.startsWith("curios:")) {
             int split = id.lastIndexOf(':');
             String type = id.substring(7, split);
@@ -325,6 +341,7 @@ public final class RefillTargetPanel {
                     net.minecraft.client.resources.language.I18n.exists(key)
                             ? Component.translatable(key)
                             : Component.literal(type);
+            if (!needsIndex(id, sideIds)) return name;
             return name.copy().append(" " + (Integer.parseInt(id.substring(split + 1)) + 1));
         }
         int slot = Integer.parseInt(id.substring(10));

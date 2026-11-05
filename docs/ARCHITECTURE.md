@@ -20,7 +20,7 @@
 
 ## 守る互換性
 
-- 登録IDは `packingcube:large_bag`、`filter_bag`、`bag`、`bag_radial`、`bags` のまま。
+- 登録IDは `packingcube:large_bag`、`storage_pouch`、`bag`、`bag_radial`、`bags`。収納ポーチはPC-58で`filter_bag`から改名し、旧IDは`DeferredRegister.addAlias`で解決し続ける。
 - `DataComponents.CONTAINER` と `packingcube_filter` の保存形式は変えない。
 - PayloadのID、プロトコルバージョン、フィールド順・数値操作IDは変えない。フィルター操作番号は `network/FilterActions` へ集約した。
 - 権限・カーソル保持・menu ID・バッグ所在の検証はクライアントへ移さない。

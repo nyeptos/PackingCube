@@ -102,8 +102,8 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
     }
 
     private int hoveredAt(double x, double y) {
-        if (x >= manageX && x < manageX + 130 && y >= manageY && y < manageY + 18) return -1;
-        return RadialGeometry.hit(x - cx, y - cy);
+        if (backdrop.containsManage(x, y)) return -1;
+        return RadialGeometry.hit(x, y, cx, cy, radius);
     }
 
     private void choose(int index) {
@@ -128,7 +128,7 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
     }
 
     private boolean overManagement(double x, double y) {
-        return x >= manageX && x < manageX + 130 && y >= manageY && y < manageY + 18;
+        return backdrop.containsManage(x, y);
     }
 
     private void clickSound(float pitch) {
@@ -164,7 +164,7 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
             return true;
         }
         if (button == 0) {
-            if (x >= manageX && x < manageX + 130 && y >= manageY && y < manageY + 18) send(-1);
+            if (backdrop.containsManage(x, y)) send(-1);
             else choose(hoveredAt(x, y));
         }
         return true;
@@ -232,19 +232,21 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
         for (int i = 0; i < RadialGeometry.COUNT; i++) {
             var icon = menu.icon(i);
             any |= !icon.isEmpty();
-            int x = RadialGeometry.x(cx, radius, i), y = RadialGeometry.y(cy, radius, i);
+            int left = RadialGeometry.frameLeft(cx, radius, i);
+            int top = RadialGeometry.frameTop(cy, radius, i);
+            int x = left + RadialGeometry.FRAME_SIZE / 2, y = top + RadialGeometry.FRAME_SIZE / 2;
             boolean active = i == hovered && !icon.isEmpty();
             int number = i + 1;
             var skin = RadialSlotSkin.select(!icon.isEmpty(), active, sent && pressedSlot == i);
             ButtonAnimationRenderer.draw(
                     g,
                     slotAnimations[i].sample(Util.getMillis(), active, !icon.isEmpty()),
-                    x - 18,
-                    y - 18,
-                    36,
-                    36,
+                    left,
+                    top,
+                    RadialGeometry.FRAME_SIZE,
+                    RadialGeometry.FRAME_SIZE,
                     () -> {
-                        WidgetTextures.draw(g, skin, x - 18, y - 18);
+                        WidgetTextures.draw(g, skin, left, top);
                         if (!icon.isEmpty()) g.renderItem(icon, x - 8, y - 11);
                         else g.drawCenteredString(font, "—", x, y - 9, 0xFFFFFF);
                         g.drawCenteredString(font, Integer.toString(number), x, y + 7, 0xFFFFFF);
@@ -266,26 +268,22 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
                 cx,
                 cy + 4,
                 0xFFFFFF);
-        boolean manageHover =
-                mouseX >= manageX
-                        && mouseX < manageX + 130
-                        && mouseY >= manageY
-                        && mouseY < manageY + 18;
+        boolean manageHover = backdrop.containsManage(mouseX, mouseY);
         ButtonAnimationRenderer.draw(
                 g,
                 managementAnimation.sample(Util.getMillis(), manageHover, true),
                 manageX,
                 manageY,
-                130,
-                18,
+                RadialLayout.MANAGE_WIDTH,
+                RadialLayout.MANAGE_HEIGHT,
                 () -> {
                     WidgetTextures.draw(
                             g,
                             WidgetSkin.button(true, false, manageHover),
                             manageX,
                             manageY,
-                            130,
-                            18);
+                            RadialLayout.MANAGE_WIDTH,
+                            RadialLayout.MANAGE_HEIGHT);
                     g.drawCenteredString(font, text("manage"), cx, manageY + 5, 0xFFFFFF);
                 });
         // The same Item tooltip path as inventory stacks, backed only by sanitized filter preview

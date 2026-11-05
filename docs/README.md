@@ -29,7 +29,7 @@ Gradleを再読み込みし、`runClient` を実行する。修正パッチは�
 
 ```mcfunction
 /give @s packingcube:large_bag
-/give @s packingcube:filter_bag
+/give @s packingcube:storage_pouch
 ```
 
 1. フィルターバッグを**メインハンド**に持つ。
@@ -303,7 +303,7 @@ Minecraft標準の **設定 → 操作設定 → キー割り当て → PackingC
 **今回のZIPを上書きで適用する場合は、旧モデル2ファイルを削除すること。**
 
 - `src/main/resources/assets/packingcube/models/item/large_bag.json`
-- `src/main/resources/assets/packingcube/models/item/filter_bag.json`
+- `src/generated/resources/assets/packingcube/models/item/storage_pouch.json`
 
 生成版は `src/generated/resources` に同梱している。Gitパッチで適用する場合、上記削除も自動的に含まれる。適用対象は直前の「カーソル保持」版（PC-13）。ZIPとパッチは代替手段であり二重適用しない。
 

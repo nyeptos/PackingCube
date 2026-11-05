@@ -5,6 +5,7 @@ import github.nyeptos.packingcube.bag.refill.RefillSettings;
 import github.nyeptos.packingcube.item.BagItem;
 
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredItem;
@@ -16,9 +17,9 @@ public final class ModItems {
 
     public static final DeferredItem<BagItem> LARGE_BAG =
             ITEMS.register("large_bag", () -> new BagItem(true, new Item.Properties().stacksTo(1)));
-    public static final DeferredItem<BagItem> FILTER_BAG =
+    public static final DeferredItem<BagItem> STORAGE_POUCH =
             ITEMS.register(
-                    "filter_bag", () -> new BagItem(false, new Item.Properties().stacksTo(1)));
+                    "storage_pouch", () -> new BagItem(false, new Item.Properties().stacksTo(1)));
 
     public static final DeferredItem<BagItem> REFILL_POUCH =
             ITEMS.register(
@@ -32,9 +33,19 @@ public final class ModItems {
                                                     DataComponents.CUSTOM_DATA,
                                                     RefillSettings.defaults())));
 
+    /**
+     * The pouch was registered as {@code packingcube:filter_bag} before PC-58. The alias keeps
+     * saved inventories, bag contents and datapack references resolving to the renamed item.
+     */
+    private static final ResourceLocation LEGACY_STORAGE_POUCH =
+            ResourceLocation.fromNamespaceAndPath(Packingcube.MODID, "filter_bag");
+
     private ModItems() {}
 
     public static void register(IEventBus bus) {
+        ITEMS.addAlias(
+                LEGACY_STORAGE_POUCH,
+                ResourceLocation.fromNamespaceAndPath(Packingcube.MODID, "storage_pouch"));
         ITEMS.register(bus);
     }
 }

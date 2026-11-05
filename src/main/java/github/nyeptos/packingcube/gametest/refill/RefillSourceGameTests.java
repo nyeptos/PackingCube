@@ -101,7 +101,7 @@ public final class RefillSourceGameTests {
         assign(pouch, 1, 40, 3);
         var root = install(p, pouch);
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 7,
+                RefillDispatcher.tick(p) == 7,
                 "Initially empty inventory and offhand fill without use events");
         h.assertTrue(
                 p.getInventory().getItem(9).getCount() == 4 && p.getOffhandItem().getCount() == 3,
@@ -120,7 +120,7 @@ public final class RefillSourceGameTests {
         RefillSlotSettings.set(pouch, 0, "enabled", "false");
         var root = install(p, pouch);
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0 && count(root, 0) == 20,
+                RefillDispatcher.tick(p) == 0 && count(root, 0) == 20,
                 "OFF and unassigned sources never supply");
         var parent = new BagInventory(root, true, () -> {});
         var mounted = parent.getItem(0);
@@ -129,7 +129,7 @@ public final class RefillSourceGameTests {
         BagFilter.setExcluding(mounted, false);
         parent.setChanged();
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0,
+                RefillDispatcher.tick(p) == 0,
                 "Shared enabled include filter with no rules blocks supply");
         h.succeed();
     }
@@ -142,7 +142,7 @@ public final class RefillSourceGameTests {
         var root = install(p, pouch);
         p.getInventory().setItem(0, new ItemStack(Items.DIRT, 2));
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0
+                RefillDispatcher.tick(p) == 0
                         && p.getInventory().getItem(0).is(Items.DIRT)
                         && count(root, 0) == 10,
                 "Other item untouched by default");
@@ -158,7 +158,7 @@ public final class RefillSourceGameTests {
         var root = install(p, pouch);
         p.getInventory().setItem(0, new ItemStack(Items.DIRT, 7));
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 4
+                RefillDispatcher.tick(p) == 4
                         && p.getInventory().getItem(0).is(Items.STONE)
                         && count(root, 0) == 6,
                 "Source count conserved");
@@ -181,7 +181,7 @@ public final class RefillSourceGameTests {
             if (i != 8) p.getInventory().setItem(i, new ItemStack(Items.DIAMOND, 64));
         var oldRoot = root.copy();
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0
+                RefillDispatcher.tick(p) == 0
                         && ItemStack.matches(oldRoot, root)
                         && p.getInventory().getItem(0).getCount() == 64,
                 "Full inventory aborts before any mutation");
@@ -199,11 +199,11 @@ public final class RefillSourceGameTests {
         RefillSlotSettings.set(pouch, 1, "priority", "9");
         var root = install(p, pouch);
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 4
+                RefillDispatcher.tick(p) == 4
                         && p.getInventory().getItem(0).is(Items.STONE),
                 "Higher source priority wins regardless of source number");
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0
+                RefillDispatcher.tick(p) == 0
                         && count(root, 0) == 12
                         && count(root, 1) == 8,
                 "Satisfied high-priority destination blocks later replacement");
@@ -223,7 +223,7 @@ public final class RefillSourceGameTests {
         assign(pouch, 2, 0, 4);
         var root = install(p, pouch);
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 4
+                RefillDispatcher.tick(p) == 4
                         && p.getInventory().getItem(0).is(Items.STONE)
                         && count(root, 2) == 12,
                 "First stocked source in 1-9 order supplies fallback");
@@ -238,7 +238,7 @@ public final class RefillSourceGameTests {
         assign(pouch, 1, 38, 64);
         var root = install(p, pouch);
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 1
+                RefillDispatcher.tick(p) == 1
                         && p.getInventory().getItem(39).is(Items.DIAMOND_HELMET),
                 "Correct armor equips, upper limit one");
         h.assertTrue(
@@ -248,21 +248,22 @@ public final class RefillSourceGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void thresholdUseAndItemStackLimitsAreRespected(GameTestHelper h) {
+    public static void thresholdAndItemStackLimitsAreRespected(GameTestHelper h) {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.ENDER_PEARL, 16));
         assign(pouch, 0, 0, 64);
-        RefillSlotSettings.set(pouch, 0, "timing", "use");
+        RefillSlotSettings.set(pouch, 0, "threshold", "2");
         var root = install(p, pouch);
         p.getInventory().setItem(0, new ItemStack(Items.ENDER_PEARL, 3));
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0,
-                "Use mode does not top off an existing stack passively");
+                RefillDispatcher.tick(p) == 0,
+                "Above the threshold the hand is left alone");
+        p.getInventory().setItem(0, new ItemStack(Items.ENDER_PEARL, 2));
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of("inventory:0")) == 13
+                RefillDispatcher.tick(p) == 14
                         && p.getInventory().getItem(0).getCount() == 16
-                        && count(root, 0) == 3,
-                "Use witness triggers count clamped to real item maximum");
+                        && count(root, 0) == 2,
+                "At the threshold the hand tops up, clamped to the real item maximum");
         h.succeed();
     }
 
@@ -274,7 +275,7 @@ public final class RefillSourceGameTests {
         var root = install(p, pouch);
         p.inventoryMenu.setCarried(new ItemStack(Items.DIRT));
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0 && count(root, 0) == 12,
+                RefillDispatcher.tick(p) == 0 && count(root, 0) == 12,
                 "Cursor activity pauses supply");
         p.inventoryMenu.setCarried(ItemStack.EMPTY);
         var parent = new BagInventory(root, true, () -> {});
@@ -287,8 +288,8 @@ public final class RefillSourceGameTests {
                         8,
                         false);
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0 && count(root, 0) == 12,
-                "Editing/selection screen cannot move items automatically");
+                RefillDispatcher.tick(p) == 0 && count(root, 0) == 12,
+                "The open backpack's own pouches are never a source for its screen");
         h.succeed();
     }
 
@@ -368,7 +369,7 @@ public final class RefillSourceGameTests {
         RefillSlotSettings.set(pouch, 0, "replace", "true");
         var root = install(p, pouch);
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0 && count(root, 0) == 12,
+                RefillDispatcher.tick(p) == 0 && count(root, 0) == 12,
                 "Live source root cannot be replaced or copied back with stale contents");
         p.getInventory().selected = 0;
         h.assertTrue(
@@ -390,7 +391,7 @@ public final class RefillSourceGameTests {
         p.getInventory().setItem(1, new ItemStack(Items.DIRT, 60));
         var before = root.copy();
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0
+                RefillDispatcher.tick(p) == 0
                         && ItemStack.matches(root, before)
                         && p.getInventory().getItem(1).getCount() == 60,
                 "Failed multi-slot return reservation never applies its partial plan");
@@ -435,7 +436,7 @@ public final class RefillSourceGameTests {
                 1);
         p.getInventory().setItem(39, old);
         h.assertTrue(
-                RefillDispatcher.tick(p, Set.of()) == 0
+                RefillDispatcher.tick(p) == 0
                         && ItemStack.matches(old, p.getInventory().getItem(39))
                         && count(root, 0) == 1,
                 "Vanilla curse and mayPickup constraints remain authoritative");
@@ -450,7 +451,7 @@ public final class RefillSourceGameTests {
         install(player, fresh);
         player.getInventory().selected = 0;
         h.assertTrue(
-                RefillDispatcher.tick(player, Set.of()) == 0
+                RefillDispatcher.tick(player) == 0
                         && RefillService.hand(player, 0, new ItemStack(Items.STONE)) == 0,
                 "Unassigned new pouch cannot refill arbitrary hand slots");
         var old = LegacyRefillFixture.pouch();
@@ -533,7 +534,7 @@ public final class RefillSourceGameTests {
                     "Source " + (i + 1) + " persists independently");
         player.containerMenu = player.inventoryMenu;
         h.assertTrue(
-                RefillDispatcher.tick(player, Set.of()) == 45,
+                RefillDispatcher.tick(player) == 45,
                 "All nine sources supply their assigned independent targets");
         for (int i = 0; i < 9; i++)
             h.assertTrue(

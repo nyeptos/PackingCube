@@ -1,8 +1,9 @@
 package github.nyeptos.packingcube.gui.layout;
 
 /**
- * Inventory/close bounds are local to the inventory origin. Settings bounds use a separate sidebar
- * origin independent of the inventory, so opening settings never moves real slots.
+ * Inventory bounds are local to the inventory origin. Settings bounds, including the close
+ * control, use a separate sidebar origin independent of the inventory, so opening settings never
+ * moves real slots.
  */
 public record BagSettingsLayout(int width, int height, int inventoryHeight, int optionRows) {
     public record Rect(int x, int y, int width, int height) {
@@ -90,8 +91,14 @@ public record BagSettingsLayout(int width, int height, int inventoryHeight, int 
         return Math.max(112, inventoryHeight);
     }
 
-    public Rect closeButton() {
-        return new Rect(156, 2, 14, 14);
+    /** Close control inside the settings panel, above the scrolling content. */
+    public Rect settingsClose() {
+        return new Rect(width - 18, 3, 14, 14);
+    }
+
+    /** Help control beside the close control; explanations open outside the panel. */
+    public Rect settingsHelp() {
+        return new Rect(width - 36, 3, 14, 14);
     }
 
     public Rect inventory() {

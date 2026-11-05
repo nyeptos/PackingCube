@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.client.gui.components.events.AbstractContainerEventHandler;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.gui.narration.NarratedElementType;
@@ -20,7 +21,6 @@ import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 /** Owns all right-hand widgets, clips drawing, and prevents off-viewport interaction. */
 public final class SettingsScrollPanel extends AbstractContainerEventHandler
@@ -41,6 +41,11 @@ public final class SettingsScrollPanel extends AbstractContainerEventHandler
 
     private record Entry(AbstractWidget widget, int localX, int originalY) {}
 
+    /** Content that needs the cursor position for hover feedback. */
+    public interface ContentRenderer {
+        void render(GuiGraphics graphics, int mouseX, int mouseY);
+    }
+
     private final List<Entry> entries = new ArrayList<>();
     private java.util.Map<String, SkinnedButton.Feedback> buttonFeedback;
 
@@ -52,7 +57,7 @@ public final class SettingsScrollPanel extends AbstractContainerEventHandler
     private Viewport viewport;
     private int originX, originY;
     private int canvasTop;
-    private Consumer<GuiGraphics> contentRenderer = graphics -> {};
+    private ContentRenderer contentRenderer = (graphics, mouseX, mouseY) -> {};
     private boolean scrollbarDragging;
     private final ScrollbarSoundState scrollbarSounds = new ScrollbarSoundState();
     private boolean hovered;
@@ -103,7 +108,7 @@ public final class SettingsScrollPanel extends AbstractContainerEventHandler
         updatePositions();
     }
 
-    public void setContentRenderer(Consumer<GuiGraphics> renderer) {
+    public void setContentRenderer(ContentRenderer renderer) {
         contentRenderer = renderer;
     }
 
@@ -187,7 +192,7 @@ public final class SettingsScrollPanel extends AbstractContainerEventHandler
                 scroll.visualClipBottom(viewport.bottom(), ButtonAnimation.VISUAL_MARGIN));
         graphics.pose().pushPose();
         graphics.pose().translate(originX, originY - scroll.offset(), 0);
-        contentRenderer.accept(graphics);
+        contentRenderer.render(graphics, mouseX, mouseY);
         graphics.pose().popPose();
         for (Entry entry : entries) {
             if (intersects(entry))
@@ -274,6 +279,16 @@ public final class SettingsScrollPanel extends AbstractContainerEventHandler
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double horizontal, double vertical) {
         if (!contains(mouseX, mouseY)) return false;
+        // A hovered slider owns the wheel; everything else keeps scrolling the page.
+        if (vertical != 0) {
+            for (Entry entry : entries) {
+                if (entry.widget() instanceof SkinnedSlider slider
+                        && slider.visible
+                        && slider.isMouseOver(mouseX, mouseY)
+                        && slider.scrolled(
+                                vertical, Screen.hasShiftDown())) return true;
+            }
+        }
         scroll.wheel(vertical);
         updatePositions();
         return true;

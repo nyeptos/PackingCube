@@ -102,8 +102,8 @@ public final class RefillControlsGameTests {
                 RefillSettings.slots(p) == 511
                         && RefillSettings.offhandEnabled(p)
                         && !RefillSettings.filterEnabled(p)
-                        && RefillSettings.timing(p).equals("empty")
-                        && RefillSettings.target(p) == 0,
+                        && RefillSettings.threshold(p) == 0
+                        && RefillSettings.target(p) == RefillSettings.MAX_TARGET,
                 "Defaults: all hand slots, empty trigger, full stack, filter OFF");
         var original = p.copy();
         for (String[] invalid :
@@ -113,7 +113,7 @@ public final class RefillControlsGameTests {
                     {"target", "65"},
                     {"threshold", "64"},
                     {"offhand", "yes"},
-                    {"timing", "other"},
+                    {"target", "0"},
                     {"filter", "1"},
                     {"container", "true"},
                     {"target", "999999999999"}
@@ -124,7 +124,8 @@ public final class RefillControlsGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void filtersDoNotRestrictStorageOrManualStow(GameTestHelper h) {
+    public static void filtersDoNotRestrictManualInsertionButBulkStowSkipsSupplies(
+            GameTestHelper h) {
         var p = player(h);
         var pouch = pouch();
         BagFilter.setExcluding(pouch, false);
@@ -157,8 +158,11 @@ public final class RefillControlsGameTests {
         p.containerMenu = menu;
         p.getInventory().setItem(9, new ItemStack(Items.DIRT, 4));
         h.assertTrue(
-                menu.stowAll(p, 7) == 4 && count(root, 0, 0) == 6,
-                "Explicit stow ignores supply-only rule");
+                menu.stowAll(p, 7) == 0 && count(root, 0, 0) == 2,
+                "Bulk stow leaves refill pouches alone");
+        h.assertTrue(
+                p.getInventory().getItem(9).getCount() == 4,
+                "Items without a storage destination stay in the inventory");
         h.succeed();
     }
 
@@ -252,7 +256,7 @@ public final class RefillControlsGameTests {
     }
 
     @GameTest(template = "empty")
-    public static void timingThresholdAndTargetAreIndependent(GameTestHelper h) {
+    public static void thresholdAndTargetAreIndependent(GameTestHelper h) {
         var p = player(h);
         var pouch = pouch(new ItemStack(Items.STONE, 40));
         RefillSettings.set(pouch, "target", "16");
@@ -263,7 +267,6 @@ public final class RefillControlsGameTests {
                 p.getMainHandItem().getCount() == 4 && count(root, 0, 0) == 40,
                 "Empty mode waits for exhaustion");
         var parent = modules(root);
-        RefillSettings.set(parent.getItem(0), "timing", "threshold");
         RefillSettings.set(parent.getItem(0), "threshold", "2");
         parent.setChanged();
         use(p, InteractionHand.MAIN_HAND, 3);
@@ -273,12 +276,12 @@ public final class RefillControlsGameTests {
                 p.getMainHandItem().getCount() == 16 && count(root, 0, 0) == 26,
                 "Threshold supplies up to chosen target");
         parent = modules(root);
-        RefillSettings.set(parent.getItem(0), "timing", "use");
+        RefillSettings.set(parent.getItem(0), "threshold", "15");
         parent.setChanged();
         use(p, InteractionHand.MAIN_HAND, 15);
         h.assertTrue(
                 p.getMainHandItem().getCount() == 16 && count(root, 0, 0) == 25,
-                "Each-use mode fills after actual consumption");
+                "A threshold one below the target tops the hand up after each use");
         h.succeed();
     }
 
@@ -447,7 +450,7 @@ public final class RefillControlsGameTests {
                         && RefillSettings.filterEnabled(icon)
                         && icon.get(DataComponents.CONTAINER) == null,
                 "Radial sanitized copy retains configuration, not contents");
-        var normal = ModItems.FILTER_BAG.get().getDefaultInstance();
+        var normal = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         var normalMenu = new BagMenu(12, p.getInventory(), contents(normal), normal, -1, false);
         p.containerMenu = normalMenu;
         h.assertTrue(
@@ -474,7 +477,7 @@ public final class RefillControlsGameTests {
                 "Disabled output filter clearly labeled");
         RefillSettings.set(p, "filter", "true");
         BagFilterTooltip.append(p, new ArrayList<>());
-        var regular = ModItems.FILTER_BAG.get().getDefaultInstance();
+        var regular = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         h.assertTrue(
                 !contents(regular).canPlaceItem(0, new ItemStack(Items.DIRT)),
                 "Normal storage pouch still obeys its filter");

@@ -13,9 +13,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.IntConsumer;
+import java.util.function.IntSupplier;
 import java.util.function.Supplier;
 
 /** Source 1–9 pages, per-source destination/method, and explicitly shared pouch settings. */
@@ -30,14 +34,29 @@ public final class RefillSettingsPanel {
         void rebuild();
 
         void toggleTargets();
+
+        /** Side-slot ids of the open menu; used only to decide slot numbering. */
+        default List<String> sideIds() {
+            return List.of();
+        }
+
+        /** Real stack limit of the item this destination holds or would receive; 0 if unknown. */
+        default int destinationLimit(String destination) {
+            return 0;
+        }
     }
 
     private record LabelledButton(
             Button button, Supplier<Component> label, BooleanSupplier enabled) {}
 
+    private static final String[] TAB_KEYS = {
+        "refill_page_destinations", "refill_page_method", "refill_page_filter"
+    };
+
     private final Access access;
     private final RefillSettingsView view;
     private final List<LabelledButton> live = new ArrayList<>();
+    private final Map<Integer, SkinnedSlider> sliders = new HashMap<>();
     private String shape;
     private BagSettingsLayout layout;
     private Consumer<AbstractWidget> widgets;
@@ -50,6 +69,10 @@ public final class RefillSettingsPanel {
 
     private static Component text(String key) {
         return Component.translatable("gui.packingcube." + key);
+    }
+
+    private static String tabKey(int page) {
+        return TAB_KEYS[page];
     }
 
     private static Component format(String key, Object... args) {
@@ -150,6 +173,7 @@ public final class RefillSettingsPanel {
         this.top = top;
         this.widgets = widgets;
         live.clear();
+        sliders.clear();
         shape = view.shape(settings());
         for (int i = 0; i < 9; i++) {
             int source = i;
@@ -166,14 +190,13 @@ public final class RefillSettingsPanel {
                     () -> view.source() == source,
                     () -> true);
         }
-        String[] tabs = {"refill_page_destinations", "refill_page_method", "refill_page_filter"};
         for (int i = 0; i < 3; i++) {
             final int page = i;
             int x = layout.content().width() * i / 3, next = layout.content().width() * (i + 1) / 3;
             fullTab(
                     x,
                     next - x - 1,
-                    () -> text(tabs[page]),
+                    () -> text(tabKey(page)),
                     () -> {
                         view.page(page);
                         access.rebuild();
@@ -236,32 +259,127 @@ public final class RefillSettingsPanel {
                 () -> text(rule().replace() ? "refill_replace_on" : "refill_replace_off"),
                 () -> setRule("replace", !rule().replace()),
                 () -> rule().replace());
-        number(8, () -> rule().priority(), v -> setRule("priority", v), 0, 9);
+        if (rule().replace()) {
+            full(
+                    8,
+                    () -> text("refill_collect_" + (rule().collect() ? "on" : "off")),
+                    () -> setRule("collect", !rule().collect()),
+                    () -> rule().collect());
+            full(
+                    9,
+                    () -> text("refill_lock_" + (rule().lock() ? "on" : "off")),
+                    () -> setRule("lock", !rule().lock()),
+                    () -> rule().lock());
+        }
+        number(priorityRow(), () -> rule().priority(), v -> setRule("priority", v), 0, 9);
+    }
+
+    private int priorityRow() {
+        return view.priorityRow(settings());
+    }
+
+    private Component durabilityLabel(RefillSlotSettings.Rule rule) {
+        int value = sliderValue(5, rule.durability());
+        return switch (rule.durabilityMode()) {
+            case "percent" -> format("refill_durability_percent", value);
+            case "count" -> format("refill_durability_count", value);
+            default -> text("refill_durability_off");
+        };
+    }
+
+    /** Off, percent and count share one row so the method page stays two sliders wide. */
+    private void cycleDurability() {
+        setRule(
+                "durabilityMode",
+                switch (rule().durabilityMode()) {
+                    case "percent" -> "count";
+                    case "count" -> "off";
+                    default -> "percent";
+                });
     }
 
     private void buildMethod() {
+        slider(
+                3,
+                () -> 1,
+                this::stackLimit,
+                this::effectiveTarget,
+                value -> setRule("target", value),
+                "refill_target_label");
         full(
-                2,
-                () -> text("refill_timing_" + rule().timing()),
-                () -> {
-                    var all = RefillSettings.TIMINGS;
-                    setRule("timing", all.get((all.indexOf(rule().timing()) + 1) % all.size()));
-                },
-                null);
-        if (view.thresholdVisible(settings()))
-            number(4, () -> rule().threshold(), v -> setRule("threshold", v), 0, 63);
-        full(
-                5,
-                () -> text(rule().target() == 0 ? "refill_amount_full" : "refill_amount_custom"),
-                () -> setRule("target", rule().target() == 0 ? 16 : 0),
-                null);
-        if (view.targetVisible(settings()))
-            number(7, () -> rule().target(), v -> setRule("target", v), 1, 64);
+                4,
+                () -> durabilityLabel(rule()),
+                this::cycleDurability,
+                () -> !rule().durabilityOff());
+        if (!rule().durabilityOff())
+            slider(
+                    5,
+                    () -> 1,
+                    () -> 100,
+                    () -> Math.clamp(rule().durability(), 1, 100),
+                    value -> setRule("durability", value),
+                    "refill_durability_label");
+        slider(
+                7,
+                () -> 0,
+                () -> Math.max(0, effectiveTarget() - 1),
+                this::effectiveThreshold,
+                value -> setRule("threshold", value),
+                "refill_threshold_label");
+    }
+
+    /** Real stack limit of the refilled item, so the slider never offers more than one stack. */
+    private int stackLimit() {
+        int limit = access.destinationLimit(rule().destination());
+        return limit > 0 ? limit : RefillSettings.MAX_TARGET;
+    }
+
+    private int effectiveTarget() {
+        return Math.min(rule().target(), stackLimit());
+    }
+
+    private int effectiveThreshold() {
+        return Math.min(rule().threshold(), Math.max(0, effectiveTarget() - 1));
+    }
+
+    private void slider(
+            int row,
+            IntSupplier min,
+            IntSupplier max,
+            IntSupplier value,
+            IntConsumer change,
+            String labelKey) {
+        var rect = layout.optionRow(row);
+        var slider =
+                new SkinnedSlider(
+                        left + rect.x(),
+                        top + rect.y(),
+                        rect.width(),
+                        rect.height(),
+                        min,
+                        max,
+                        value,
+                        change,
+                        text(labelKey));
+        sliders.put(row, slider);
+        widgets.accept(slider);
+    }
+
+    /** Live slider value, so labels follow the knob instead of the last server snapshot. */
+    private int sliderValue(int row, int fallback) {
+        var slider = sliders.get(row);
+        return slider == null ? fallback : slider.current();
+    }
+
+    private boolean draggingSlider() {
+        for (var slider : sliders.values()) if (slider.dragging()) return true;
+        return false;
     }
 
     public void tick() {
         if (shape != null && !shape.equals(view.shape(settings()))) {
-            access.rebuild();
+            // Rebuilding mid-drag would replace the grabbed widget and drop the pointer.
+            if (!draggingSlider()) access.rebuild();
             return;
         }
         for (var entry : live) {
@@ -278,9 +396,29 @@ public final class RefillSettingsPanel {
                     font, lines.get(i), rect.x(), rect.y() + 2 + i * font.lineHeight, 0xffffff);
     }
 
+    private void valueRight(GuiGraphics graphics, Font font, int row, Component text) {
+        var rect = layout.optionRow(row);
+        graphics.drawString(
+                font, text, rect.right() - font.width(text), rect.y() + 5, 0xffffff);
+    }
+
     private void value(GuiGraphics graphics, Font font, int row, Component text) {
         var rect = layout.optionRow(row);
         graphics.drawCenteredString(font, text, rect.centerX(), rect.y() + 5, 0xffffff);
+    }
+
+    /** One explanation per control row, shown only while the help mode is on. */
+    public record HelpEntry(int row, Component name, Component body) {}
+
+    public HelpEntry helpAt(int row) {
+        if (row < 0) return null;
+        for (var helpRow : view.helpRows(settings()))
+            if (helpRow.row() == row)
+                return new HelpEntry(
+                        row,
+                        text("refill_help_name_" + helpRow.key()),
+                        text("refill_help_body_" + helpRow.key()));
+        return null;
     }
 
     public void renderLabels(GuiGraphics graphics, Font font) {
@@ -290,29 +428,31 @@ public final class RefillSettingsPanel {
                 Component destination =
                         rule().destination().isEmpty()
                                 ? text("refill_destination_none")
-                                : RefillTargetPanel.targetName(rule().destination());
+                                : RefillTargetPanel.targetName(
+                                        rule().destination(), access.sideIds());
                 label(
                         graphics,
                         font,
                         4,
                         format("refill_source_destination", view.source() + 1, destination),
-                        3);
-                value(graphics, font, 8, format("pickup_priority", rule().priority()));
-                label(graphics, font, 9, text("refill_source_priority_help"), 4);
+                        2);
+                value(graphics, font, priorityRow(), format("pickup_priority", rule().priority()));
             }
             case RefillSettingsView.METHOD -> {
-                if (view.thresholdVisible(settings())) {
-                    label(graphics, font, 3, text("refill_threshold_label"), 2);
-                    value(graphics, font, 4, format("refill_threshold_count", rule().threshold()));
-                }
-                if (view.targetVisible(settings())) {
-                    label(graphics, font, 6, text("refill_target_label"), 2);
-                    value(graphics, font, 7, format("refill_item_count", rule().target()));
-                }
-                label(graphics, font, 8, text("refill_source_amount_help"), 4);
+                label(graphics, font, 2, text("refill_target_label"), 1);
+                valueRight(
+                        graphics,
+                        font,
+                        2,
+                        format("refill_item_count", sliderValue(3, effectiveTarget())));
+                label(graphics, font, 6, text("refill_threshold_label"), 1);
+                valueRight(
+                        graphics,
+                        font,
+                        6,
+                        format("refill_threshold_count", sliderValue(7, effectiveThreshold())));
             }
-            case RefillSettingsView.FILTER ->
-                    label(graphics, font, 4, text("refill_shared_help"), 4);
+            case RefillSettingsView.FILTER -> {}
             default -> throw new IllegalStateException();
         }
     }

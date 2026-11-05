@@ -23,7 +23,11 @@ public enum WidgetSkin {
     SCROLLBAR_TRACK(6, 12, 0, 2),
     SCROLLBAR_THUMB_NORMAL(6, 12, 0, 2),
     SCROLLBAR_THUMB_HOVERED(6, 12, 0, 2),
-    SCROLLBAR_THUMB_DRAGGING(6, 12, 0, 2);
+    SCROLLBAR_THUMB_DRAGGING(6, 12, 0, 2),
+    SLIDER_TRACK(20, 12, 3, 3),
+    SLIDER_KNOB_NORMAL(8, 12, 0, 0),
+    SLIDER_KNOB_HOVERED(8, 12, 0, 0),
+    SLIDER_KNOB_DRAGGING(8, 12, 0, 0);
     public final int width, height, borderX, borderY;
 
     WidgetSkin(int width, int height, int borderX, int borderY) {
@@ -77,6 +81,12 @@ public enum WidgetSkin {
 
     public static WidgetSkin search(boolean active, boolean focused) {
         return !active ? SEARCH_DISABLED : focused ? SEARCH_FOCUSED : SEARCH_NORMAL;
+    }
+
+    public static WidgetSkin knob(boolean dragging, boolean hovered) {
+        return dragging
+                ? SLIDER_KNOB_DRAGGING
+                : hovered ? SLIDER_KNOB_HOVERED : SLIDER_KNOB_NORMAL;
     }
 
     public static WidgetSkin thumb(boolean dragging, boolean hovered) {

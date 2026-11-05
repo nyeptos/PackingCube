@@ -23,7 +23,8 @@ public final class ModItemModelProvider extends ItemModelProvider {
                 BuiltInRegistries.ITEM.getKey(ModItems.LARGE_BAG.get()).getPath(),
                 modLoc("item/backpack_equipped"));
         // Use the artist-supplied pouch icon in inventory and radial menus.
-        flatItem(ModItems.FILTER_BAG.get(), modLoc("item/filter_bag"));
+        flatItem(ModItems.STORAGE_POUCH.get(), modLoc("item/storage_pouch"));
+        flatItem(ModItems.REFILL_POUCH.get(), modLoc("item/refill_pouch"));
         // For a new mod texture at textures/item/<id>.png: basicItem(ModItems.YOUR_ITEM.get());
     }
 

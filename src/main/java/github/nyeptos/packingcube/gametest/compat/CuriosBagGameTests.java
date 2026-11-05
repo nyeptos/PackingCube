@@ -75,7 +75,7 @@ public final class CuriosBagGameTests {
     }
 
     private static ItemStack stoneModule() {
-        ItemStack module = ModItems.FILTER_BAG.get().getDefaultInstance();
+        ItemStack module = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         BagFilter.add(module, "items", ResourceLocation.withDefaultNamespace("stone"));
         return module;
     }
@@ -176,7 +176,7 @@ public final class CuriosBagGameTests {
         helper.assertTrue(menu.stillValid(player), "Unequipping to inventory keeps identity");
         contents.setItem(3, stoneModule());
         helper.assertTrue(
-                modules(moved).getItem(3).is(ModItems.FILTER_BAG.get()),
+                modules(moved).getItem(3).is(ModItems.STORAGE_POUCH.get()),
                 "Updates target new stack");
         helper.assertTrue(
                 back(player).getStackInSlot(0).isEmpty(),
@@ -535,8 +535,8 @@ public final class CuriosBagGameTests {
     public static void equippedBackpackSuppliesRefillPouchButPouchCannotEquip(GameTestHelper h) {
         var p = player(h);
         var supply = LegacyRefillFixture.pouch();
-        github.nyeptos.packingcube.bag.refill.RefillSettings.set(supply, "timing", "use");
         github.nyeptos.packingcube.bag.refill.RefillSettings.set(supply, "target", "3");
+        github.nyeptos.packingcube.bag.refill.RefillSettings.set(supply, "threshold", "2");
         storage(supply).setItem(0, new ItemStack(Items.STONE, 8));
         var root = bag();
         modules(root).setItem(0, supply);
@@ -603,7 +603,7 @@ public final class CuriosBagGameTests {
         player.getInventory().setItem(8, root);
         h.assertTrue(
                 github.nyeptos.packingcube.bag.refill.RefillDispatcher.tick(
-                                player, java.util.Set.of())
+                                player)
                         == 0,
                 "Ordinary stone cannot equip in back slot");
         Consumer<top.theillusivec4.curios.api.event.CurioCanEquipEvent> allow =
@@ -616,13 +616,13 @@ public final class CuriosBagGameTests {
             inventory(player).setSlotActive("back", 0, false);
             h.assertTrue(
                     github.nyeptos.packingcube.bag.refill.RefillDispatcher.tick(
-                                    player, java.util.Set.of())
+                                    player)
                             == 0,
                     "Inactive slot cannot receive items");
             inventory(player).setSlotActive("back", 0, true);
             h.assertTrue(
                     github.nyeptos.packingcube.bag.refill.RefillDispatcher.tick(
-                                            player, java.util.Set.of())
+                                            player)
                                     == 3
                             && back(player).getStackInSlot(0).getCount() == 3,
                     "Public validator permission allows valid custom equipment into active slot");
@@ -660,7 +660,7 @@ public final class CuriosBagGameTests {
             var before = root.copy();
             h.assertTrue(
                     github.nyeptos.packingcube.bag.refill.RefillDispatcher.tick(
-                                            player, java.util.Set.of())
+                                            player)
                                     == 0
                             && ItemStack.matches(root, before)
                             && back(player).getStackInSlot(0).is(Items.DIRT),

@@ -35,9 +35,7 @@ public final class RefillClarityGameTests {
                 view.page() == RefillSettingsView.DESTINATIONS && !view.editorVisible(bag),
                 "First page is destinations without a filter editor");
         view.page(RefillSettingsView.METHOD);
-        h.assertTrue(
-                !view.thresholdVisible(bag) && !view.targetVisible(bag) && !view.priorityExpanded(),
-                "Unused counts and advanced priority hidden by default");
+        h.assertTrue(!view.priorityExpanded(), "Advanced priority hidden by default");
         view.togglePriority();
         view.page(RefillSettingsView.FILTER);
         h.assertTrue(
@@ -46,11 +44,10 @@ public final class RefillClarityGameTests {
         RefillSettings.set(bag, "filter", "true");
         h.assertTrue(view.editorVisible(bag), "Only enabled filter page exposes shared editor");
         view.page(RefillSettingsView.METHOD);
-        RefillSettings.set(bag, "timing", "threshold");
         RefillSettings.set(bag, "target", "16");
         h.assertTrue(
-                view.thresholdVisible(bag) && view.targetVisible(bag),
-                "Count fields appear only when relevant");
+                RefillSettings.target(bag) == 16 && RefillSettings.threshold(bag) <= 15,
+                "Counts stay within the item-independent slider range");
         h.succeed();
     }
 
@@ -124,6 +121,10 @@ public final class RefillClarityGameTests {
                 h.assertTrue(
                         !entry.getValue().getAsString().contains("搬出フィルター"),
                         "Player-facing name consistently refill filter");
+            for (var entry : json.entrySet())
+                h.assertTrue(
+                        !entry.getValue().getAsString().contains("旧品"),
+                        "Collected items are not called 旧品");
             h.assertTrue(
                     json.get("gui.packingcube.refill_filter_heading")
                             .getAsString()
@@ -138,10 +139,26 @@ public final class RefillClarityGameTests {
                                     .contains("補充後"),
                     "Different counts have explicit purposes");
             h.assertTrue(
-                    json.get("gui.packingcube.refill_amount_help")
+                    json.get("gui.packingcube.refill_help_name_target")
                             .getAsString()
-                            .contains("追加数ではなく"),
-                    "Final count is not confused with quantity added");
+                            .equals("補充後の個数"),
+                    "Help names the final count explicitly");
+            h.assertTrue(
+                    json.get("gui.packingcube.refill_help_body_threshold")
+                            .getAsString()
+                            .contains("空になったとき"),
+                    "The empty-hand case is explained in the help line");
+            for (var key :
+                    new String[] {
+                        "source", "pages", "enabled", "select", "clear", "replace", "collect",
+                        "lock", "priority", "target", "threshold", "filter", "trade"
+                    })
+                h.assertTrue(
+                        !json.get("gui.packingcube.refill_help_name_" + key).getAsString().isEmpty()
+                                && !json.get("gui.packingcube.refill_help_body_" + key)
+                                        .getAsString()
+                                        .isEmpty(),
+                        "Each control has its own explanation: " + key);
         }
         h.succeed();
     }

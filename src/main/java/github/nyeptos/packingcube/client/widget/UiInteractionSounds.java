@@ -16,6 +16,11 @@ public final class UiInteractionSounds {
         click(1.8F, .2F);
     }
 
+    /** Softer, higher tick for one slider step; the widget throttles repeats. */
+    public static void slide() {
+        click(1.4F, .12F);
+    }
+
     private static void click(float pitch, float volume) {
         Minecraft.getInstance()
                 .getSoundManager()

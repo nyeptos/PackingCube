@@ -39,8 +39,10 @@ The source item itself determines the item/components to supply; no sample regis
   If higher stock is empty or ineligible, the next candidate is tried. With replacement ON,
   a fallback may replace the previous candidate's item once that higher stock is exhausted.
 - Ordinary passive checks occur every5 ticks (up to0.25s). Witnessed hand use also triggers an
-  immediate Post tick pass. Source edits have no automatic inventory effects while a bag screen
-  is open. Other containers, occupied cursor, dead/spectator/creative players pause mapped supply.
+  immediate Post tick pass. Mapped supply keeps running while this mod's bag screen (including its
+  settings panel) is open, and resends the open screen's slots after a pass. The backpack whose
+  screen is open is never a source, and source edits still have no automatic inventory effects.
+  Other containers, an occupied cursor, and dead/spectator/creative players pause mapped supply.
 
 ## Replacement safety
 
@@ -55,10 +57,41 @@ Replacement defaults OFF. With a different destination item and replacement ON:
   cannot fit, neither destination, source nor return inventory is changed. No item is dropped.
 - Backpacks/pouches themselves are never displaced, including a live source backpack, preventing
   a stale nested-storage copy or root movement from duplicating contents.
+- Replacement is one switch (`replace`). While it is on, an occupied destination is replaced
+  whenever the incoming stack is not identical to the one in place. Item data such as durability
+  is never compared, so a worn stack can take the slot of a fresh one.
+- Durability limit (`durabilityMode` = `off`/`percent`/`count`, `durability` = 1-100): a
+  same-item swap can wait until the stack in place is nearly spent. `percent` compares the share
+  left, `count` the remaining points. Anything above the limit is left alone, so a partly worn
+  tool keeps its slot. Other items are never delayed, and `off` keeps the plain rule.
+- The limit belongs to the destination, not to one source. Every rule aimed at the same
+  destination is checked, and a single rule that asks to wait holds the slot for that pass, so a
+  second source or a second pouch with the same destination can never swap in ahead of it.
 - One destination is handled by one successful/satisfied candidate per pass, not repeated swaps.
 - Source count is reduced only after validation and successful destination write; exact components
   are retained. Inventory synchronization corrects predicted item-use counts even if restored to
   the previous server-sent count. Real visual/network multiplayer confirmation remains pending.
+
+## Returned items and slot locks
+
+The displaced item goes back into the **same pouch** by default (`collect` ON) instead of the
+inventory, and the slot that receives it is **locked** (`lock` ON) so it never supplies again.
+Both are per-source switches shown on the Destination page only while replacement is ON.
+
+- Return slot search runs on the contents **after** this removal: the freed source slot first,
+  then a same item/components slot with room, then an empty slot. The whole displaced stack must
+  fit one slot, so a returned item is never split or duplicated.
+- No suitable pouch slot falls back to the inventory return above. If neither side has room the
+  pass aborts and nothing is written.
+- The lock is a 9-bit `locked` mask in `packingcube_refill`, not item data on the returned stack,
+  so split/merge/manual moves cannot carry a stale marker. Emptying the slot, by hand or by any
+  other move, clears its bit; a slot refilled while still occupied stays locked.
+- Locked sources are skipped before any destination or source check. `lock` OFF keeps collecting
+  into the pouch without blocking, which can swap the same item back and forth by design.
+- Slot writes happen in one save: the lock bit is written first, then the slot content, so the
+  pouch's parent inventory persists both together.
+- The pouch screen dims a locked slot and draws a small lock. The explanation lives in the
+  settings help pane, not in an item tooltip, so it cannot cover neighbouring slots.
 
 ## Shared settings and migration
 

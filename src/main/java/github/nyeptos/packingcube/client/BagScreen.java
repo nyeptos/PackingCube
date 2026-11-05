@@ -2,8 +2,10 @@ package github.nyeptos.packingcube.client;
 
 import github.nyeptos.packingcube.bag.input.BagKeyActions;
 import github.nyeptos.packingcube.bag.pickup.BagPickupSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSettings;
 import github.nyeptos.packingcube.client.widget.FilterEditorPanel;
 import github.nyeptos.packingcube.client.widget.FloatingWindow;
+import github.nyeptos.packingcube.client.widget.HelpPane;
 import github.nyeptos.packingcube.client.widget.RefillSettingsPanel;
 import github.nyeptos.packingcube.client.widget.RefillTargetPanel;
 import github.nyeptos.packingcube.client.widget.SettingsScrollPanel;
@@ -39,6 +41,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -70,6 +73,10 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
     private Button priorityUp;
     private Button stowButton;
     private Button settingsButton;
+    private SkinnedButton settingsClose;
+    private SkinnedButton settingsHelp;
+    private boolean helpMode;
+    private HelpPane.Placement helpPane;
 
     public BagScreen(BagMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -114,6 +121,8 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         priorityUp = null;
         stowButton = null;
         settingsButton = null;
+        settingsClose = null;
+        settingsHelp = null;
         imageWidth = 176;
         imageHeight = 132;
         inventoryLabelY = 38;
@@ -156,33 +165,46 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         }
         directHeld = BagKeyHandler.bindingDown(BagKeyHandler.OPEN_BIG_BAG);
         radialHeld = BagKeyHandler.bindingDown();
-        if (!menu.isModules()) {
+        if (!menu.isModules() && (!editing || targetPanel.selecting())) {
             settingsButton =
                     addRenderableWidget(
                             Button.builder(
                                             targetPanel.selecting()
                                                     ? text("refill_select_cancel")
-                                                    : editing
-                                                            ? Component.literal("×")
-                                                            : text("settings"),
+                                                    : text("settings"),
                                             button -> {
                                                 if (targetPanel.selecting())
                                                     targetPanel.selecting(false);
                                                 else editing = !editing;
                                                 rebuildWidgets();
                                             })
+                                    .bounds(leftPos + 115, topPos + 2, 55, 14)
+                                    .build(SkinnedButton::new));
+        }
+        if (editing && !targetPanel.selecting()) {
+            var close = settingsLayout.settingsClose();
+            settingsClose =
+                    SkinnedButton.close(
+                            Button.builder(Component.literal("×"), button -> closeSettings())
                                     .bounds(
-                                            editing && !targetPanel.selecting()
-                                                    ? leftPos + settingsLayout.closeButton().x()
-                                                    : leftPos + 115,
-                                            topPos + 2,
-                                            editing && !targetPanel.selecting() ? 14 : 55,
-                                            14)
-                                    .build(
-                                            b ->
-                                                    editing && !targetPanel.selecting()
-                                                            ? SkinnedButton.close(b)
-                                                            : new SkinnedButton(b)));
+                                            settingsLeft + close.x(),
+                                            settingsTop + close.y(),
+                                            close.width(),
+                                            close.height()));
+            if (menu.isRefill()) {
+                var help = settingsLayout.settingsHelp();
+                settingsHelp =
+                        SkinnedButton.toggle(
+                                Button.builder(
+                                                Component.literal("?"),
+                                                button -> helpMode = !helpMode)
+                                        .bounds(
+                                                settingsLeft + help.x(),
+                                                settingsTop + help.y(),
+                                                help.width(),
+                                                help.height()),
+                                () -> helpMode);
+            }
         }
         if (menu.isModules()) {
             stowButton =
@@ -220,7 +242,7 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         if (!editing || targetPanel.selecting()) return;
         if (menu.isRefill() && !refillView.editorVisible(menu.filterSnapshot())) {
             settingsPanel.setContentRenderer(
-                    graphics -> refillControls.renderLabels(graphics, font));
+                    (graphics, mouseX, mouseY) -> refillControls.renderLabels(graphics, font));
             return;
         }
         // This adapter is the only place where the generic editor knows the current menu's
@@ -276,9 +298,14 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
                         filterState);
         filterEditor.build(settingsLayout, settingsLeft, settingsTop, settingsPanel::add);
         settingsPanel.setContentRenderer(
-                graphics -> {
+                (graphics, mouseX, mouseY) -> {
                     filterEditor.renderBackground(graphics);
                     filterEditor.renderLabels(graphics);
+                    filterEditor.renderMarks(
+                            graphics,
+                            mouseX,
+                            settingsPanel.unscrolledY(mouseY),
+                            settingsPanel.contains(mouseX, mouseY));
                     if (refillControls != null) refillControls.renderLabels(graphics, font);
                     if (menu.isRefill()) return;
                     var row = settingsLayout.optionRow(1);
@@ -299,6 +326,31 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         return !targetPanel.overSide(mouseX, mouseY)
                 && !overSettings(mouseX, mouseY)
                 && super.hasClickedOutside(mouseX, mouseY, guiLeft, guiTop, button);
+    }
+
+    /** Real stack limit of the item a refill destination holds, or of the pouch stock it takes. */
+    private int refillDestinationLimit(String destination) {
+        var held = destinationStack(destination);
+        if (!held.isEmpty()) return held.getMaxStackSize();
+        for (int i = 0; i < menu.visibleSlotCount(); i++) {
+            var stored = menu.getSlot(i).getItem();
+            if (!stored.isEmpty()) return stored.getMaxStackSize();
+        }
+        return 0;
+    }
+
+    private ItemStack destinationStack(String destination) {
+        if (!destination.startsWith("inventory:")) return ItemStack.EMPTY;
+        int index;
+        try {
+            index = Integer.parseInt(destination.substring("inventory:".length()));
+        } catch (NumberFormatException ignored) {
+            return ItemStack.EMPTY;
+        }
+        var inventory = minecraft.player.getInventory();
+        return index >= 0 && index < inventory.getContainerSize()
+                ? inventory.getItem(index)
+                : ItemStack.EMPTY;
     }
 
     private void buildPickupControls() {
@@ -325,6 +377,14 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
 
                                 public void rebuild() {
                                     refillRebuildRequested = true;
+                                }
+
+                                public List<String> sideIds() {
+                                    return RefillTargetPanel.sideIds(menu);
+                                }
+
+                                public int destinationLimit(String destination) {
+                                    return refillDestinationLimit(destination);
                                 }
 
                                 public void toggleTargets() {
@@ -448,6 +508,14 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
             targetPanel.update(menu, leftPos, topPos);
             targetPanel.mouseClicked(mouseX, mouseY, button);
             cancelInventoryDrag();
+            return true;
+        }
+        if (overSettingsClose(mouseX, mouseY)) {
+            if (settingsClose != null) settingsClose.mouseClicked(mouseX, mouseY, button);
+            return true;
+        }
+        if (overSettingsHelp(mouseX, mouseY)) {
+            if (settingsHelp != null) settingsHelp.mouseClicked(mouseX, mouseY, button);
             return true;
         }
         if (editing
@@ -688,6 +756,7 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         }
         if (stowButton != null) stowButton.active = menu.getCarried().isEmpty();
         super.render(graphics, mouseX, mouseY, partialTick);
+        renderLockedSlots(graphics);
         if (!targetPanel.selecting() && !overSettings(mouseX, mouseY)) {
             var equipment = targetPanel.hoveredSlot(menu, mouseX, mouseY);
             if (equipment != null) hoveredSlot = equipment;
@@ -707,9 +776,37 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
             if (!targetPanel.selecting()) renderTooltip(graphics, mouseX, mouseY);
             targetPanel.renderTooltip(graphics, menu, mouseX, mouseY);
         }
-        if (filterEditor != null && settingsPanel != null && settingsPanel.contains(mouseX, mouseY))
-            filterEditor.renderTooltip(
-                    graphics, mouseX, mouseY, mouseX, settingsPanel.unscrolledY(mouseY));
+    }
+
+    /** Returned items keep their slot locked; dim it and show a lock so the reason is visible. */
+    private void renderLockedSlots(GuiGraphics graphics) {
+        var pouch = menu.filterSnapshot();
+        for (int i = 0; i < menu.visibleSlotCount(); i++) {
+            if (!RefillSettings.locked(pouch, i)) continue;
+            var slot = menu.getSlot(i);
+            int x = leftPos + slot.x, y = topPos + slot.y;
+            graphics.fill(x, y, x + 16, y + 16, 0x8C000000);
+            drawLock(graphics, x + 2, y + 2);
+        }
+    }
+
+    private static void drawLock(GuiGraphics graphics, int x, int y) {
+        int color = 0xFFE8E8E8;
+        graphics.fill(x + 3, y + 1, x + 9, y + 2, color);
+        graphics.fill(x + 3, y + 1, x + 4, y + 5, color);
+        graphics.fill(x + 8, y + 1, x + 9, y + 5, color);
+        graphics.fill(x + 2, y + 5, x + 10, y + 11, color);
+        graphics.fill(x + 5, y + 7, x + 7, y + 9, 0xFF303030);
+    }
+
+    @Override
+    protected List<Component> getTooltipFromContainerItem(ItemStack stack) {
+        List<Component> lines = new ArrayList<>(super.getTooltipFromContainerItem(stack));
+        if (hoveredSlot != null
+                && hoveredSlot.index < menu.visibleSlotCount()
+                && RefillSettings.locked(menu.filterSnapshot(), hoveredSlot.index))
+            lines.add(Component.translatable("gui.packingcube.refill_slot_locked"));
+        return lines;
     }
 
     @Override
@@ -780,12 +877,31 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
     }
 
     private boolean overSettings(double mouseX, double mouseY) {
-        return editing && !targetPanel.selecting() && settingsWindow.contains(mouseX, mouseY);
+        if (!editing || targetPanel.selecting()) return false;
+        return settingsWindow.contains(mouseX, mouseY)
+                || (helpPane != null && helpPane.contains(mouseX, mouseY));
     }
 
     @Override
     protected boolean isHovering(int x, int y, int w, int h, double mouseX, double mouseY) {
         return !overSettings(mouseX, mouseY) && super.isHovering(x, y, w, h, mouseX, mouseY);
+    }
+
+    private boolean overSettingsClose(double mouseX, double mouseY) {
+        if (!editing || targetPanel.selecting() || settingsLayout == null) return false;
+        return settingsLayout.settingsClose().contains(mouseX - settingsLeft, mouseY - settingsTop);
+    }
+
+    private boolean overSettingsHelp(double mouseX, double mouseY) {
+        if (!editing || targetPanel.selecting() || settingsLayout == null) return false;
+        return settingsLayout.settingsHelp().contains(mouseX - settingsLeft, mouseY - settingsTop);
+    }
+
+    private void closeSettings() {
+        editing = false;
+        helpMode = false;
+        helpPane = null;
+        rebuildWidgets();
     }
 
     private void renderSettings(GuiGraphics graphics, int mouseX, int mouseY) {
@@ -798,8 +914,63 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
                 text("settings"),
                 mouseX,
                 mouseY,
-                () -> settingsPanel.render(graphics, mouseX, mouseY, renderPartialTick));
+                () -> {
+                    settingsPanel.render(graphics, mouseX, mouseY, renderPartialTick);
+                    if (settingsClose == null) return;
+                    var close = settingsLayout.settingsClose();
+                    settingsClose.setX(settingsLeft + close.x());
+                    settingsClose.setY(settingsTop + close.y());
+                    settingsClose.render(graphics, mouseX, mouseY, renderPartialTick);
+                    if (settingsHelp == null) return;
+                    var help = settingsLayout.settingsHelp();
+                    settingsHelp.setX(settingsLeft + help.x());
+                    settingsHelp.setY(settingsTop + help.y());
+                    settingsHelp.render(graphics, mouseX, mouseY, renderPartialTick);
+                });
         graphics.pose().popPose();
+        renderHelpPane(graphics, mouseX, mouseY);
+    }
+
+    /** Help mode: the explanation of the button under the cursor, beside the settings window. */
+    private void renderHelpPane(GuiGraphics graphics, int mouseX, int mouseY) {
+        if (!helpMode || !editing || targetPanel.selecting() || refillControls == null) {
+            helpPane = null;
+            return;
+        }
+        var entry = refillControls.helpAt(hoveredSettingsRow(mouseX, mouseY));
+        Component title = entry == null ? text("help") : entry.name();
+        List<Component> body =
+                entry == null ? List.of(text("refill_help_hint")) : List.of(entry.body());
+        int paneWidth = Math.max(90, Math.min(150, width - 8));
+        var wrapped = HelpPane.wrap(font, paneWidth, body);
+        int paneHeight = Math.min(HelpPane.height(wrapped.size()), height - 4);
+        var window = settingsWindow.state();
+        var placement =
+                HelpPane.place(
+                        window.x(),
+                        window.y(),
+                        window.width(),
+                        width,
+                        height,
+                        paneWidth,
+                        paneHeight);
+        helpPane = placement;
+        graphics.pose().pushPose();
+        try {
+            graphics.pose().translate(-leftPos, -topPos, 0);
+            HelpPane.render(graphics, font, placement, title, wrapped);
+        } finally {
+            graphics.pose().popPose();
+        }
+    }
+
+    /** Row under the cursor in settings-content space, or -1 when outside the viewport. */
+    private int hoveredSettingsRow(double mouseX, double mouseY) {
+        if (settingsPanel == null || settingsLayout == null) return -1;
+        if (!settingsPanel.contains(mouseX, mouseY)) return -1;
+        int row =
+                Math.floorDiv((int) (settingsPanel.unscrolledY(mouseY) - settingsTop - 24), 20);
+        return row >= 0 && row < refillView.rows() ? row : -1;
     }
 
     @Override

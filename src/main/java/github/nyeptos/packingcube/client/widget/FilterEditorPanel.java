@@ -1,15 +1,18 @@
 package github.nyeptos.packingcube.client.widget;
 
 import github.nyeptos.packingcube.bag.filter.BagFilter;
+import github.nyeptos.packingcube.gui.animation.SlotFeedback;
 import github.nyeptos.packingcube.gui.input.FilterEditorState;
 import github.nyeptos.packingcube.gui.layout.BagSettingsLayout;
 import github.nyeptos.packingcube.gui.skin.WidgetSkin;
 
+import com.mojang.blaze3d.systems.RenderSystem;
+
+import net.minecraft.Util;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -24,6 +27,12 @@ import java.util.function.Consumer;
 
 /** Reusable filter widgets. The host supplies synchronized data and validates all requests. */
 public final class FilterEditorPanel {
+    private static final String SAMPLE_ID = "sample";
+    private static final ResourceLocation SAMPLE_HOVERED =
+            texture("refill_target_hovered.png");
+    private static final ResourceLocation SAMPLE_PRESSED =
+            texture("refill_target_pressed.png");
+
     public interface Access {
         ItemStack settings();
 
@@ -51,13 +60,18 @@ public final class FilterEditorPanel {
     private final Font font;
     private final Access access;
     private final FilterEditorState state;
+    private final SlotFeedback feedback = new SlotFeedback();
     private final List<Button> rowButtons = new ArrayList<>();
     private BagSettingsLayout layout;
     private Consumer<AbstractWidget> widgets;
     private int left, top, panelX, panelWidth;
-    private EditBox search;
+    private SkinnedEditBox search;
     private Button modeToggle, candidateTab, registeredTab, addItem, previous, next;
     private boolean ghostPressed;
+
+    private static ResourceLocation texture(String file) {
+        return ResourceLocation.fromNamespaceAndPath("packingcube", "textures/gui/" + file);
+    }
 
     public FilterEditorPanel(Font font, Access access, FilterEditorState state) {
         this.font = font;
@@ -81,6 +95,10 @@ public final class FilterEditorPanel {
         this.top = top;
         this.widgets = widgets;
         ghostPressed = false;
+        feedback.clear();
+        if (search != null) {
+            search.setPointerOver(false);
+        }
         rowButtons.clear();
         panelX = layout.content().x();
         panelWidth = layout.content().width();
@@ -323,9 +341,20 @@ public final class FilterEditorPanel {
         return layout != null && layout.sampleSlot().contains(mouseX - left, mouseY - top);
     }
 
+    /** The ID field is a fixed row, so its own rectangle is the whole hit test. */
+    private boolean overSearch(double mouseX, double mouseY) {
+        return search != null
+                && search.visible
+                && mouseX >= search.getX()
+                && mouseX < search.getX() + search.getWidth()
+                && mouseY >= search.getY()
+                && mouseY < search.getY() + search.getHeight();
+    }
+
     public boolean samplePressed(double mouseX, double mouseY, int button) {
         if (!overSample(mouseX, mouseY) || (button != 0 && button != 1)) return false;
         access.sampleCursor(button == 1);
+        pressSample();
         ghostPressed = true;
         return true;
     }
@@ -337,7 +366,13 @@ public final class FilterEditorPanel {
         }
         if (!overSample(mouseX, mouseY) || (button != 0 && button != 1)) return false;
         access.sampleCursor(button == 1);
+        pressSample();
         return true;
+    }
+
+    private void pressSample() {
+        feedback.press(SAMPLE_ID);
+        UiInteractionSounds.grab();
     }
 
     public void renderBackground(GuiGraphics graphics) {
@@ -346,13 +381,45 @@ public final class FilterEditorPanel {
                 graphics, WidgetSkin.GHOST_SLOT, slot.x(), slot.y(), slot.width(), slot.height());
     }
 
-    public void renderTooltip(
-            GuiGraphics graphics,
-            int screenX,
-            int screenY,
-            double unscrolledX,
-            double unscrolledY) {
-        if (overSample(unscrolledX, unscrolledY))
-            graphics.renderTooltip(font, text("ghost_help"), screenX, screenY);
+    /**
+     * Event-based hover and press feedback for the sample slot. Coordinates are screen space with
+     * the panel's scroll offset already removed, the same space the click checks use.
+     */
+    public void renderMarks(
+            GuiGraphics graphics, double mouseX, double mouseY, boolean pointerInside) {
+        if (layout == null) return;
+        // Anything scrolled out of the viewport stays silent, even when the pointer sits over the
+        // place it would have been drawn.
+        boolean overSearch = pointerInside && overSearch(mouseX, mouseY);
+        if (search != null && search.setPointerOver(overSearch)) UiInteractionSounds.hover();
+        boolean over = pointerInside && overSample(mouseX, mouseY);
+        if (feedback.enter(over ? SAMPLE_ID : null)) {
+            UiInteractionSounds.hover();
+        }
+        var frame = feedback.frame(SAMPLE_ID, Util.getMillis(), ghostPressed);
+        if (frame.hover() <= .001F && frame.press() <= .001F) return;
+        var slot = layout.sampleSlot();
+        graphics.pose().pushPose();
+        graphics.pose().translate(0, 0, 210);
+        if (frame.hover() > .001F)
+            drawAlpha(graphics, SAMPLE_HOVERED, slot.x(), slot.y(), .7F * frame.hover());
+        if (frame.press() > .001F)
+            drawAlpha(graphics, SAMPLE_PRESSED, slot.x(), slot.y(), .85F * frame.press());
+        graphics.pose().popPose();
+    }
+
+    private static void drawAlpha(
+            GuiGraphics graphics, ResourceLocation texture, int x, int y, float alpha) {
+        graphics.flush();
+        graphics.setColor(1, 1, 1, alpha);
+        draw(graphics, texture, x, y);
+        graphics.setColor(1, 1, 1, 1);
+    }
+
+    private static void draw(GuiGraphics graphics, ResourceLocation texture, int x, int y) {
+        graphics.flush();
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        graphics.blit(texture, x, y, 0, 0, 18, 18, 18, 18);
     }
 }

@@ -4,6 +4,9 @@ package github.nyeptos.packingcube.command;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import github.nyeptos.packingcube.bag.filter.BagFilter;
+import github.nyeptos.packingcube.bag.refill.RefillDiagnostics;
+import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSupply;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.commands.CommandSourceStack;
@@ -56,7 +59,28 @@ public final class BagCommands {
                                 .then(filter)
                                 .then(
                                         Commands.literal("refillstatus")
-                                                .executes(ctx -> refillStatus(ctx.getSource()))));
+                                                .executes(ctx -> refillStatus(ctx.getSource())))
+                                .then(
+                                        Commands.literal("refillrules")
+                                                .executes(ctx -> refillRules(ctx.getSource()))));
+    }
+
+    /** Read-only dump of every saved source rule and what its wear limit decides right now. */
+    private static int refillRules(CommandSourceStack source) throws CommandSyntaxException {
+        var player = source.getPlayerOrException();
+        int lines = 0;
+        for (var pouch : RefillSupply.collect(player, -2)) {
+            if (!RefillSlotSettings.mapped(pouch.bagStack())) continue;
+            for (int i = 0; i < RefillSlotSettings.COUNT; i++) {
+                var rule = RefillSlotSettings.get(pouch.bagStack(), i);
+                if (rule.destination().isEmpty() && rule.durabilityOff()) continue;
+                var text = RefillDiagnostics.rule(player, pouch, i);
+                source.sendSuccess(() -> Component.literal(text), false);
+                lines++;
+            }
+        }
+        if (lines == 0) source.sendSuccess(() -> Component.literal("no rule"), false);
+        return lines;
     }
 
     private static int refillStatus(CommandSourceStack source) throws CommandSyntaxException {
@@ -88,7 +112,7 @@ public final class BagCommands {
 
     private static ItemStack heldBag(CommandSourceStack source) throws CommandSyntaxException {
         ItemStack bag = source.getPlayerOrException().getMainHandItem();
-        if (!bag.is(ModItems.FILTER_BAG.get())) {
+        if (!bag.is(ModItems.STORAGE_POUCH.get())) {
             source.sendFailure(Component.translatable("message.packingcube.hold_filter"));
             return ItemStack.EMPTY;
         }
