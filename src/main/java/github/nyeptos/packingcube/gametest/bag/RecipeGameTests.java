@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.gametest.bag;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -11,11 +11,11 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import java.util.List;
 
 /** Every bag has a crafting recipe the recipe book can offer. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RecipeGameTests {
     private static boolean exists(GameTestHelper h, String path) {
-        var id = ResourceLocation.fromNamespaceAndPath(Packingcube.MODID, path);
+        var id = ResourceLocation.fromNamespaceAndPath(PackingCube.MODID, path);
         return h.getLevel()
                 .getRecipeManager()
                 .byKey(id)

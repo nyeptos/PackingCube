@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.client.compat;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -14,7 +14,7 @@ public final class CuriosClientCompat {
     static final ModelResourceLocation EQUIPPED_MODEL =
             ModelResourceLocation.standalone(
                     ResourceLocation.fromNamespaceAndPath(
-                            Packingcube.MODID, "item/backpack_equipped"));
+                            PackingCube.MODID, "item/backpack_equipped"));
 
     private CuriosClientCompat() {}
 

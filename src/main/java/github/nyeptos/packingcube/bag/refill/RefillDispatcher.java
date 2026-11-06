@@ -10,7 +10,7 @@ import java.util.*;
 
 /** Server-thread, deterministic per-source dispatch with a single winner per destination. */
 public final class RefillDispatcher {
-    private record Candidate(BagInventory pouch, int source, RefillSlotSettings.Rule rule) {}
+    private record Candidate(BagInventory pouch, int source, RefillSlotDestinations.Rule rule) {}
 
     private record ReturnSlot(int index, ItemStack stack) {}
 
@@ -25,9 +25,9 @@ public final class RefillDispatcher {
                 || !player.containerMenu.getCarried().isEmpty()) return 0;
         List<Candidate> candidates = new ArrayList<>();
         for (var pouch : RefillSupply.collect(player, -2)) {
-            if (!RefillSlotSettings.mapped(pouch.bagStack())) continue;
-            for (int i = 0; i < RefillSlotSettings.COUNT; i++) {
-                var rule = RefillSlotSettings.get(pouch.bagStack(), i);
+            if (!RefillSlotDestinations.mapped(pouch.bagStack())) continue;
+            for (int i = 0; i < RefillSlotDestinations.COUNT; i++) {
+                var rule = RefillSlotDestinations.get(pouch.bagStack(), i);
                 if (rule.enabled() && !rule.destination().isEmpty())
                     candidates.add(new Candidate(pouch, i, rule));
             }
@@ -39,63 +39,7 @@ public final class RefillDispatcher {
         for (var c : candidates) protectedSlots.add(c.rule().destination());
         int total = 0;
         for (var c : candidates) {
-            String id = c.rule().destination();
-            if (claimed.contains(id)) continue;
-            // A returned item keeps its slot out of supply until the player empties that slot.
-            if (RefillSettings.locked(c.pouch().bagStack(), c.source())) continue;
-            ItemStack source = c.pouch().getItem(c.source()).copy();
-            if (source.isEmpty()
-                    || !BagInventory.accepts(false, source)
-                    || !RefillSettings.allows(c.pouch().bagStack(), source)) continue;
-            var destination = RefillDestination.resolve(player, id);
-            if (destination == null || !destination.accepts(source)) continue;
-            ItemStack old = destination.read().copy();
-            // Never displace a backpack/pouch (which may be the live source root).
-            if (BagInventory.isBag(old)) continue;
-            boolean same = !old.isEmpty() && ItemStack.isSameItemSameComponents(source, old);
-            boolean replacing = !old.isEmpty() && !same;
-            if (replacing && (!c.rule().replace() || !destination.removable())) continue;
-            // Several rules can share one destination, so the strictest wear limit wins: a rule
-            // that asks to wait holds the destination instead of letting another rule swap in.
-            if (replacing && waitsForWear(candidates, id, old)) {
-                claimed.add(id);
-                continue;
-            }
-            int existing = same ? old.getCount() : 0;
-            int maximum = Math.min(source.getMaxStackSize(), destination.limit(source));
-            int desired = c.rule().desired(existing, maximum);
-            // A stocked higher-priority rule also owns an already-satisfied destination.
-            // Lower-priority replacement must not ping-pong it on the next tick.
-            if (desired <= existing) {
-                claimed.add(id);
-                continue;
-            }
-            int added = Math.min(source.getCount(), desired - existing);
-            if (added <= 0) continue;
-            // Collect into the pouch when allowed, otherwise fall back to the inventory.
-            ReturnSlot collected =
-                    replacing && c.rule().collect()
-                            ? planCollect(c.pouch(), c.source(), old, added)
-                            : null;
-            var returns =
-                    replacing && collected == null
-                            ? planReturn(player, old, protectedSlots)
-                            : List.<ReturnSlot>of();
-            if (replacing && collected == null && returns == null)
-                continue; // No capacity: neither side changes; never drop anything.
-            if (!ItemStack.matches(source, c.pouch().getItem(c.source()))) continue;
-            if (!destination.write(old, source.copyWithCount(existing + added))) continue;
-            c.pouch().removeItem(c.source(), added);
-            if (collected != null) {
-                // Lock first: the slot write also saves the pouch, so both land in one write.
-                if (c.rule().lock())
-                    RefillSettings.setLocked(c.pouch().bagStack(), collected.index(), true);
-                c.pouch().setItem(collected.index(), collected.stack());
-            }
-            for (var back : returns) player.getInventory().setItem(back.index(), back.stack());
-            player.getInventory().setChanged();
-            claimed.add(id);
-            total += added;
+            total += supplyOne(player, c, candidates, protectedSlots, claimed);
         }
         if (total > 0) {
             player.getInventory().setChanged();
@@ -106,6 +50,77 @@ public final class RefillDispatcher {
             else player.containerMenu.broadcastFullState();
         }
         return total;
+    }
+
+    /**
+     * Supplies one destination from one pouch slot and returns how many items moved. A
+     * destination that is already claimed, or that another rule holds back, is claimed here so a
+     * lower-priority rule cannot ping-pong it on the next tick.
+     */
+    private static int supplyOne(
+            Player player,
+            Candidate candidate,
+            List<Candidate> candidates,
+            Set<String> protectedSlots,
+            Set<String> claimed) {
+            String id = candidate.rule().destination();
+        if (claimed.contains(id)) return 0;
+        // A returned item keeps its slot out of supply until the player empties that slot.
+        if (RefillPouchSettings.locked(candidate.pouch().bagStack(), candidate.source())) return 0;
+        ItemStack source = candidate.pouch().getItem(candidate.source()).copy();
+        if (source.isEmpty()
+                || !BagInventory.accepts(false, source)
+                || !RefillPouchSettings.allows(candidate.pouch().bagStack(), source)) return 0;
+        var destination = RefillDestination.resolve(player, id);
+        if (destination == null || !destination.accepts(source)) return 0;
+        ItemStack old = destination.read().copy();
+        // Never displace a backpack/pouch (which may be the live source root).
+        if (BagInventory.isBag(old)) return 0;
+        boolean same = !old.isEmpty() && ItemStack.isSameItemSameComponents(source, old);
+        boolean replacing = !old.isEmpty() && !same;
+        if (replacing && (!candidate.rule().replace() || !destination.removable())) return 0;
+        // Several rules can share one destination, so the strictest wear limit wins: a rule
+        // that asks to wait holds the destination instead of letting another rule swap in.
+        if (replacing && waitsForWear(candidates, id, old)) {
+            claimed.add(id);
+            return 0;
+        }
+        int existing = same ? old.getCount() : 0;
+        int maximum = Math.min(source.getMaxStackSize(), destination.limit(source));
+        int desired = candidate.rule().desired(existing, maximum);
+        // A stocked higher-priority rule also owns an already-satisfied destination.
+        // Lower-priority replacement must not ping-pong it on the next tick.
+        if (desired <= existing) {
+            claimed.add(id);
+            return 0;
+        }
+        int added = Math.min(source.getCount(), desired - existing);
+        if (added <= 0) return 0;
+        // Collect into the pouch when allowed, otherwise fall back to the inventory.
+        ReturnSlot collected =
+                replacing && candidate.rule().collect()
+                        ? planCollect(candidate.pouch(), candidate.source(), old, added)
+                        : null;
+        var returns =
+                replacing && collected == null
+                        ? planReturn(player, old, protectedSlots)
+                        : List.<ReturnSlot>of();
+        if (replacing && collected == null && returns == null)
+            return 0; // No capacity: neither side changes; never drop anything.
+        if (!ItemStack.matches(source, candidate.pouch().getItem(candidate.source()))) return 0;
+        if (!destination.write(old, source.copyWithCount(existing + added))) return 0;
+        candidate.pouch().removeItem(candidate.source(), added);
+        if (collected != null) {
+            // Lock first: the slot write also saves the pouch, so both land in one write.
+            if (candidate.rule().lock())
+                RefillPouchSettings.setLocked(
+                        candidate.pouch().bagStack(), collected.index(), true);
+            candidate.pouch().setItem(collected.index(), collected.stack());
+        }
+        for (var back : returns) player.getInventory().setItem(back.index(), back.stack());
+        player.getInventory().setChanged();
+        claimed.add(id);
+        return added;
     }
 
     /**
@@ -124,24 +139,23 @@ public final class RefillDispatcher {
     private static boolean waitsForWear(
             List<Candidate> candidates, String destination, ItemStack old) {
         for (var c : candidates) {
-            var rule = c.rule();
-            if (!rule.destination().equals(destination) || !rule.replace()) continue;
-            // The limit describes the slot, so it is measured on the item in place. A source that
-            // holds a different item, or is momentarily empty, must not silently drop the limit.
-            if (!spentEnough(old, rule)) return true;
+            if (!c.rule().destination().equals(destination) || !c.rule().replace()) continue;
+            var source = c.pouch().getItem(c.source());
+            if (!source.isEmpty() && !wornEnough(source, old, c.rule())) return true;
         }
         return false;
     }
 
     /**
-     * The limit is a property of the destination: an item that still has usable durability stays,
-     * whatever the rule would put there. Items without durability are never delayed.
+     * Same-item swaps can wait until the item in place is nearly spent. Other items are never
+     * delayed, so a plain replacement keeps its old behaviour.
      */
-    static boolean spentEnough(ItemStack old, RefillSlotSettings.Rule rule) {
-        if (rule.durabilityOff()) return true;
+    static boolean wornEnough(
+            ItemStack source, ItemStack old, RefillSlotDestinations.Rule rule) {
+        if (rule.durabilityOff() || !ItemStack.isSameItem(source, old)) return true;
         int max = old.getMaxDamage();
-        if (max <= 0) return true;
-        int remaining = Math.max(0, max - old.getDamageValue());
+        if (!old.isDamageableItem() || max <= 0) return true;
+        int remaining = max - old.getDamageValue();
         int measured = rule.durabilityMode().equals("percent")
                 ? (int) ((long) remaining * 100 / max)
                 : remaining;

@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.registry;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -11,7 +11,7 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class ModCreativeTabs {
     private static final DeferredRegister<CreativeModeTab> TABS =
-            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, Packingcube.MODID);
+            DeferredRegister.create(Registries.CREATIVE_MODE_TAB, PackingCube.MODID);
 
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> BAGS =
             TABS.register(
@@ -25,6 +25,7 @@ public final class ModCreativeTabs {
                                                 output.accept(ModItems.LARGE_BAG.get());
                                                 output.accept(ModItems.STORAGE_POUCH.get());
                                                 output.accept(ModItems.REFILL_POUCH.get());
+                                                output.accept(ModItems.BULK_POUCH.get());
                                             })
                                     .build());
 

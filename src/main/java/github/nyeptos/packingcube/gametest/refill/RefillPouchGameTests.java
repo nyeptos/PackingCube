@@ -2,18 +2,19 @@ package github.nyeptos.packingcube.gametest.refill;
 
 import com.google.gson.JsonParser;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.bag.pickup.BagPickupSettings;
 import github.nyeptos.packingcube.bag.pickup.BagRouter;
 import github.nyeptos.packingcube.bag.refill.RefillService;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
-import github.nyeptos.packingcube.event.RefillHandler;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
+import github.nyeptos.packingcube.bag.refill.RefillHandler;
 import github.nyeptos.packingcube.gametest.support.LegacyRefillFixture;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
 import github.nyeptos.packingcube.network.FilterActions;
+import github.nyeptos.packingcube.network.EquipmentTargetCodec;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.core.component.DataComponents;
@@ -43,7 +44,7 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.Optional;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillPouchGameTests {
     private static Player player(GameTestHelper h) {
@@ -61,8 +62,8 @@ public final class RefillPouchGameTests {
     private static ItemStack refill(ItemStack... stacks) {
         var pouch = LegacyRefillFixture.pouch();
         // Keep the old scenario's 3-item ceiling explicit under the new user-configurable policy.
-        RefillSettings.set(pouch, "target", "3");
-        RefillSettings.set(pouch, "threshold", "2");
+        RefillPouchSettings.set(pouch, "target", "3");
+        RefillPouchSettings.set(pouch, "threshold", "2");
         var inventory = contents(pouch);
         for (int i = 0; i < stacks.length; i++) inventory.setItem(i, stacks[i]);
         return pouch;
@@ -105,7 +106,7 @@ public final class RefillPouchGameTests {
         var p = player(h);
         var pouch = refill();
         h.assertTrue(
-                RefillSettings.enabled(pouch, false) && RefillSettings.enabled(pouch, true),
+                RefillPouchSettings.enabled(pouch, false) && RefillPouchSettings.enabled(pouch, true),
                 "Independent refill switches default ON");
         h.assertTrue(
                 BagFilter.matches(pouch, new ItemStack(Items.STONE))
@@ -150,8 +151,8 @@ public final class RefillPouchGameTests {
                 menu.editFilter(p, FilterActions.SET_HOTBAR_REFILL, -1, "hotbar", "false"),
                 "Can disable hotbar");
         h.assertTrue(
-                !RefillSettings.enabled(modules(root).getItem(0), false)
-                        && RefillSettings.enabled(modules(root).getItem(0), true),
+                !RefillPouchSettings.enabled(modules(root).getItem(0), false)
+                        && RefillPouchSettings.enabled(modules(root).getItem(0), true),
                 "Trade remains ON and parent saved");
         h.assertTrue(
                 !menu.editFilter(p, FilterActions.SET_TRADE_REFILL, -1, "hotbar", "false")
@@ -161,7 +162,7 @@ public final class RefillPouchGameTests {
                 menu.editFilter(p, FilterActions.SET_TRADE_REFILL, -1, "trade", "false"),
                 "Can disable trade independently");
         h.assertTrue(
-                !RefillSettings.enabled(modules(root).getItem(0), true), "Trade setting persists");
+                !RefillPouchSettings.enabled(modules(root).getItem(0), true), "Trade setting persists");
         h.succeed();
     }
 
@@ -174,8 +175,10 @@ public final class RefillPouchGameTests {
         try {
             buffer.writeVarInt(-1);
             buffer.writeBoolean(false);
+            buffer.writeVarInt(9);
+            buffer.writeBoolean(false);
             buffer.writeBoolean(true);
-            BagMenu.writeCuriosTargets(buffer, java.util.List.of());
+            EquipmentTargetCodec.write(buffer, java.util.List.of());
             var menu = BagMenu.fromNetwork(5, p.getInventory(), buffer);
             h.assertTrue(
                     menu.isRefill() && !menu.isModules() && buffer.readableBytes() == 0,
@@ -251,7 +254,7 @@ public final class RefillPouchGameTests {
                         && p.getInventory().getItem(0).is(Items.DIRT),
                 "Replacement item never overwritten");
         var disabled = refill(new ItemStack(Items.STONE, 10));
-        RefillSettings.setEnabled(disabled, false, false);
+        RefillPouchSettings.setEnabled(disabled, false, false);
         install(p, disabled);
         p.getInventory().setItem(0, new ItemStack(Items.STONE));
         h.assertTrue(RefillService.hotbar(p, 0, before) == 0, "Hotbar switch enforced");
@@ -344,7 +347,7 @@ public final class RefillPouchGameTests {
         second.setToOutOfStock();
         h.assertTrue(RefillService.trade(p) == 0, "Out-of-stock trade never supplied");
         var disabled = refill(new ItemStack(Items.EMERALD, 8));
-        RefillSettings.setEnabled(disabled, true, false);
+        RefillPouchSettings.setEnabled(disabled, true, false);
         install(p, disabled);
         merchant(p, offer(2, false));
         h.assertTrue(RefillService.trade(p) == 0, "Trade switch enforced independently");

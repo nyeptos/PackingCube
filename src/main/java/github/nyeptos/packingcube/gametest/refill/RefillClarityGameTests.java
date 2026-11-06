@@ -2,11 +2,11 @@ package github.nyeptos.packingcube.gametest.refill;
 
 import com.google.gson.JsonParser;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.bag.refill.RefillDiagnostics;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
 import github.nyeptos.packingcube.gametest.support.LegacyRefillFixture;
 import github.nyeptos.packingcube.gui.input.RefillSettingsView;
 import github.nyeptos.packingcube.gui.layout.BagSettingsLayout;
@@ -23,7 +23,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.io.InputStreamReader;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillClarityGameTests {
     @GameTest(template = "empty")
@@ -41,12 +41,12 @@ public final class RefillClarityGameTests {
         h.assertTrue(
                 !view.editorVisible(bag) && ItemStack.matches(saved, bag),
                 "Navigation does not mutate configuration");
-        RefillSettings.set(bag, "filter", "true");
+        RefillPouchSettings.set(bag, "filter", "true");
         h.assertTrue(view.editorVisible(bag), "Only enabled filter page exposes shared editor");
         view.page(RefillSettingsView.METHOD);
-        RefillSettings.set(bag, "target", "16");
+        RefillPouchSettings.set(bag, "target", "16");
         h.assertTrue(
-                RefillSettings.target(bag) == 16 && RefillSettings.threshold(bag) <= 15,
+                RefillPouchSettings.target(bag) == 16 && RefillPouchSettings.threshold(bag) <= 15,
                 "Counts stay within the item-independent slider range");
         h.succeed();
     }
@@ -64,7 +64,7 @@ public final class RefillClarityGameTests {
         h.assertTrue(
                 view.rows() == 6 && view.contentHeight(layout, bag) == 148,
                 "Filter OFF has a compact help page");
-        RefillSettings.set(bag, "filter", "true");
+        RefillPouchSettings.set(bag, "filter", "true");
         h.assertTrue(
                 view.contentHeight(layout, bag) == layout.content().height()
                         && layout.modeY() >= layout.optionRow(5).bottom(),
@@ -96,7 +96,7 @@ public final class RefillClarityGameTests {
                 RefillDiagnostics.reason(p, 0).equals("use") && ItemStack.matches(before, root),
                 "Diagnostic does not refill, consume or save anything");
         var modules = new BagInventory(root, true, () -> {});
-        RefillSettings.set(modules.getItem(0), "filter", "true");
+        RefillPouchSettings.set(modules.getItem(0), "filter", "true");
         BagFilter.add(modules.getItem(0), "items", ResourceLocation.parse("minecraft:stone"));
         modules.setChanged();
         h.assertTrue(

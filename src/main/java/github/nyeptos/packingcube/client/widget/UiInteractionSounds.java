@@ -21,6 +21,16 @@ public final class UiInteractionSounds {
         click(1.4F, .12F);
     }
 
+    /** A slot lock snapping shut: the shared click, low and solid. */
+    public static void lock() {
+        click(.7F, .3F);
+    }
+
+    /** The same lock letting go: higher and lighter than the snap shut. */
+    public static void unlock() {
+        click(1.1F, .22F);
+    }
+
     private static void click(float pitch, float volume) {
         Minecraft.getInstance()
                 .getSoundManager()

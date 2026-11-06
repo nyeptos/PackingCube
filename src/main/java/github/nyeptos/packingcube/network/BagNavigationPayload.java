@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.network;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -11,7 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 /** Scoped to the currently open bag, so stale/repeated requests cannot affect its replacement. */
 public record BagNavigationPayload(int containerId, boolean radial) implements CustomPacketPayload {
     public static final Type<BagNavigationPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(Packingcube.MODID, "bag_navigation"));
+            new Type<>(ResourceLocation.fromNamespaceAndPath(PackingCube.MODID, "bag_navigation"));
     public static final StreamCodec<RegistryFriendlyByteBuf, BagNavigationPayload> STREAM_CODEC =
             StreamCodec.composite(
                     ByteBufCodecs.VAR_INT,

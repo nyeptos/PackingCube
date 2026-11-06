@@ -22,13 +22,6 @@ public final class BagIdentity {
         return id;
     }
 
-    /** The identity this stack already carries, or null when it was never opened. */
-    public static UUID id(ItemStack bag) {
-        if (bag.isEmpty()) return null;
-        var data = bag.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
-        return data.hasUUID(KEY) ? data.getUUID(KEY) : null;
-    }
-
     public static boolean matches(ItemStack bag, UUID id) {
         if (id == null || bag.isEmpty()) return false;
         var data = bag.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();

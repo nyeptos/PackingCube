@@ -83,6 +83,23 @@ public final class FilterEditorPanel {
         return Component.translatable("gui.packingcube." + key);
     }
 
+    /** One control and the translation key its help entry uses. */
+    public record Control(AbstractWidget widget, String key) {}
+
+    /** Every control that carries an explanation in help mode, in visual order. */
+    public List<Control> helpControls() {
+        List<Control> controls = new ArrayList<>();
+        controls.add(new Control(modeToggle, "mode"));
+        controls.add(new Control(addItem, "add_item"));
+        controls.add(new Control(candidateTab, "candidates"));
+        controls.add(new Control(registeredTab, "registered"));
+        controls.add(new Control(search, "search"));
+        for (Button row : rowButtons) controls.add(new Control(row, "rule"));
+        controls.add(new Control(previous, "pager"));
+        controls.add(new Control(next, "pager"));
+        return controls;
+    }
+
     private <T extends AbstractWidget> T addWidget(T widget) {
         widgets.accept(widget);
         return widget;
@@ -94,15 +111,33 @@ public final class FilterEditorPanel {
         this.left = left;
         this.top = top;
         this.widgets = widgets;
+        resetForBuild();
+        measureContent();
+        buildModeToggle();
+        buildAddItem();
+        buildTabs();
+        buildSearch();
+        buildRuleRows();
+        buildPager();
+        updateEditor();
+    }
+
+    /** Clears the per-build widget state so a rebuild starts clean. */
+    private void resetForBuild() {
         ghostPressed = false;
         feedback.clear();
         if (search != null) {
             search.setPointerOver(false);
         }
         rowButtons.clear();
+    }
+
+    private void measureContent() {
         panelX = layout.content().x();
         panelWidth = layout.content().width();
-        int half = (panelWidth - 4) / 2;
+    }
+
+    private void buildModeToggle() {
         modeToggle =
                 addWidget(
                         Button.builder(
@@ -112,6 +147,9 @@ public final class FilterEditorPanel {
                                                         !BagFilter.isExcluding(access.settings())))
                                 .bounds(left + panelX, top + layout.modeY(), panelWidth, 20)
                                 .build(SkinnedButton::new));
+    }
+
+    private void buildAddItem() {
         addItem =
                 addWidget(
                         Button.builder(
@@ -126,6 +164,10 @@ public final class FilterEditorPanel {
                                         })
                                 .bounds(left + panelX, top + layout.addItemY(), panelWidth, 20)
                                 .build(SkinnedButton::new));
+    }
+
+    private void buildTabs() {
+        int half = (panelWidth - 4) / 2;
         candidateTab =
                 addWidget(
                         Button.builder(
@@ -149,6 +191,9 @@ public final class FilterEditorPanel {
                                         })
                                 .bounds(left + panelX + half + 4, top + layout.tabsY(), half, 20)
                                 .build(b -> new SkinnedButton(b).selected(state::registered)));
+    }
+
+    private void buildSearch() {
         search =
                 new SkinnedEditBox(
                         font,
@@ -166,6 +211,9 @@ public final class FilterEditorPanel {
                     updateEditor();
                 });
         addWidget(search);
+    }
+
+    private void buildRuleRows() {
         int pageSize = layout.rulePageSize();
         state.setPageSize(pageSize);
         for (int i = 0; i < pageSize; i++) {
@@ -185,6 +233,9 @@ public final class FilterEditorPanel {
                                     .bounds(left + panelX, top + layout.ruleRowY(i), panelWidth, 18)
                                     .build(SkinnedButton::new)));
         }
+    }
+
+    private void buildPager() {
         previous =
                 addWidget(
                         Button.builder(
@@ -209,8 +260,8 @@ public final class FilterEditorPanel {
                                         24,
                                         18)
                                 .build(SkinnedButton::new));
-        updateEditor();
     }
+
 
     public void tick() {
         updateEditor();
@@ -219,15 +270,30 @@ public final class FilterEditorPanel {
     private void updateEditor() {
         if (search == null) return;
         state.refresh(access.settings(), access.sample());
+        updateModeToggle();
+        updateActions();
+        updateRows();
+    }
+
+    /** The allow/exclude toggle names the mode it is in. */
+    private void updateModeToggle() {
         modeToggle.setMessage(
                 Component.translatable(
                         "gui.packingcube.filter_mode",
                         text(state.excluding() ? "exclude" : "allow")));
+    }
+
+    /** Which fixed buttons the current sample and pager state allow. */
+    private void updateActions() {
         candidateTab.active = true;
         registeredTab.active = true;
         addItem.active = !access.sample().isEmpty();
         previous.active = state.hasPrevious();
         next.active = state.hasNext();
+    }
+
+    /** One button per visible rule: its mark, the tag prefix and the tooltip. */
+    private void updateRows() {
         var visible = state.visibleRules();
         for (int i = 0; i < rowButtons.size(); i++) {
             Button button = rowButtons.get(i);
@@ -267,6 +333,13 @@ public final class FilterEditorPanel {
     }
 
     public void renderLabels(GuiGraphics graphics) {
+        renderSample(graphics);
+        renderPager(graphics);
+        renderEmptyState(graphics);
+    }
+
+    /** The sample row: its label, the item and name, and the one-line help. */
+    private void renderSample(GuiGraphics graphics) {
         graphics.drawString(
                 font,
                 font.plainSubstrByWidth(text("sample").getString(), panelWidth),
@@ -299,6 +372,10 @@ public final class FilterEditorPanel {
                 layout.sampleHelpY(),
                 panelWidth,
                 0xffffff);
+    }
+
+    /** "1 / 3" between the pager arrows. */
+    private void renderPager(GuiGraphics graphics) {
         int x = panelX;
         int pages = state.pageCount();
         String paging = (state.page() + 1) + " / " + pages;
@@ -309,11 +386,15 @@ public final class FilterEditorPanel {
                 layout.pagerY() + 5,
                 0xffffff,
                 true);
+    }
+
+    /** The message shown instead of rows when nothing matches. */
+    private void renderEmptyState(GuiGraphics graphics) {
         if (state.empty())
             graphics.drawWordWrap(
                     font,
                     state.registered() ? access.emptyRules(state.excluding()) : text("no_tags"),
-                    x,
+                    panelX,
                     layout.ruleRowY(0) + 2,
                     panelWidth,
                     0xffffff);

@@ -5,12 +5,20 @@ import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
 
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 
 public final class ModNetworking {
     private ModNetworking() {}
 
     public static void register(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("6");
+        registerOpening(registrar);
+        registerRadial(registrar);
+        registerBagActions(registrar);
+    }
+
+    /** Opening the equipped bag, the big bag, and the moves between the two screens. */
+    private static void registerOpening(PayloadRegistrar registrar) {
         registrar.playToServer(
                 OpenEquippedBagPayload.TYPE,
                 OpenEquippedBagPayload.STREAM_CODEC,
@@ -31,6 +39,10 @@ public final class ModNetworking {
                                                 context.player(),
                                                 payload.containerId(),
                                                 payload.radial())));
+    }
+
+    /** The radial slot pick. A refused selection closes the screen. */
+    private static void registerRadial(PayloadRegistrar registrar) {
         registrar.playToServer(
                 RadialSelectPayload.TYPE,
                 RadialSelectPayload.STREAM_CODEC,
@@ -44,6 +56,10 @@ public final class ModNetworking {
                                             player.closeContainer();
                                     }
                                 }));
+    }
+
+    /** Stowing everything and the filter actions the open bag screen sends. */
+    private static void registerBagActions(PayloadRegistrar registrar) {
         registrar.playToServer(
                 BagStowPayload.TYPE,
                 BagStowPayload.STREAM_CODEC,

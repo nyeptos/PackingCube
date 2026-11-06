@@ -1,8 +1,8 @@
 package github.nyeptos.packingcube.gametest.refill;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.gametest.support.LegacyRefillFixture;
 import github.nyeptos.packingcube.gui.input.RefillTargetInteraction;
@@ -18,7 +18,7 @@ import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillTargetGameTests {
     @GameTest(template = "empty")
@@ -46,8 +46,8 @@ public final class RefillTargetGameTests {
     @GameTest(template = "empty")
     public static void oldHotbarSettingsMigrateWithoutNewTargetsSelected(GameTestHelper h) {
         var pouch = LegacyRefillFixture.pouch();
-        RefillSettings.set(pouch, "slots", "5");
-        RefillSettings.set(pouch, "offhand", "false");
+        RefillPouchSettings.set(pouch, "slots", "5");
+        RefillPouchSettings.set(pouch, "offhand", "false");
         h.assertTrue(
                 RefillTargets.selected(pouch, "inventory:0")
                         && !RefillTargets.selected(pouch, "inventory:1")
@@ -60,7 +60,7 @@ public final class RefillTargetGameTests {
         RefillTargets.set(pouch, "inventory:0", false);
         RefillTargets.set(pouch, "inventory:40", true);
         h.assertTrue(
-                !RefillSettings.suppliesSlot(pouch, 0) && RefillSettings.suppliesSlot(pouch, 40),
+                !RefillPouchSettings.suppliesSlot(pouch, 0) && RefillPouchSettings.suppliesSlot(pouch, 40),
                 "Existing hand refill follows slot choices");
         h.succeed();
     }
@@ -72,7 +72,7 @@ public final class RefillTargetGameTests {
         for (String id : new String[] {"inventory:9", "inventory:39", "curios:ring:2"})
             h.assertTrue(RefillTargets.set(pouch, id, true), "Valid target accepted");
         var copy = ModItems.REFILL_POUCH.get().getDefaultInstance();
-        RefillSettings.copySettings(pouch, copy);
+        RefillPouchSettings.copySettings(pouch, copy);
         h.assertTrue(
                 RefillTargets.selected(copy, "curios:ring:2")
                         && !RefillTargets.selected(copy, "curios:ring:0"),

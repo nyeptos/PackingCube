@@ -3,6 +3,7 @@ package github.nyeptos.packingcube.menu;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.BagSounds;
 import github.nyeptos.packingcube.compat.BagEquipment;
+import github.nyeptos.packingcube.network.EquipmentTargetCodec;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.network.chat.Component;
@@ -43,8 +44,10 @@ public final class BagMenuOpener {
                                 data -> {
                                     data.writeVarInt(ownerSlot);
                                     data.writeBoolean(modules);
+                                    data.writeVarInt(storage.getContainerSize());
+                                    data.writeBoolean(storage.bulk());
                                     data.writeBoolean(refill);
-                                    BagMenu.writeCuriosTargets(data, curiosTargets);
+                                    EquipmentTargetCodec.write(data, curiosTargets);
                                 })
                         .isPresent();
         if (opened && modules) BagSounds.opened(player);

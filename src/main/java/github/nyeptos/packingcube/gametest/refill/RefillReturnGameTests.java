@@ -1,10 +1,10 @@
 package github.nyeptos.packingcube.gametest.refill;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.refill.RefillDispatcher;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.network.FilterActions;
@@ -22,7 +22,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import java.util.function.Consumer;
 
 /** Replacement returns the old item to the pouch and locks that slot against re-supply. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillReturnGameTests {
     private static BagInventory storage(ItemStack pouch) {
@@ -60,9 +60,9 @@ public final class RefillReturnGameTests {
 
     /** One stone per tick into a dirt-filled hand slot, so every tick replaces exactly one. */
     private static void assign(ItemStack pouch, int source, int destination) {
-        RefillSlotSettings.set(pouch, source, "destination", RefillTargets.inventory(destination));
-        RefillSlotSettings.set(pouch, source, "target", "1");
-        RefillSlotSettings.set(pouch, source, "replace", "true");
+        RefillSlotDestinations.set(pouch, source, "destination", RefillTargets.inventory(destination));
+        RefillSlotDestinations.set(pouch, source, "target", "1");
+        RefillSlotDestinations.set(pouch, source, "replace", "true");
     }
 
     @GameTest(template = "empty")
@@ -80,10 +80,10 @@ public final class RefillReturnGameTests {
                         && storage(stored).getItem(1).is(Items.DIRT),
                 "Old item moves into the pouch instead of the inventory");
         h.assertTrue(
-                RefillSettings.locked(stored, 1) && !RefillSettings.locked(stored, 0),
+                RefillPouchSettings.locked(stored, 1) && !RefillPouchSettings.locked(stored, 0),
                 "Only the slot that took the returned item is locked");
         h.assertTrue(
-                RefillDispatcher.tick(player) == 0 && RefillSettings.locked(saved(root), 1),
+                RefillDispatcher.tick(player) == 0 && RefillPouchSettings.locked(saved(root), 1),
                 "A satisfied destination leaves the lock and the pouch untouched");
         h.succeed();
     }
@@ -99,8 +99,8 @@ public final class RefillReturnGameTests {
         edit(
                 root,
                 p -> {
-                    RefillSlotSettings.set(p, 1, "destination", RefillTargets.inventory(10));
-                    RefillSlotSettings.set(p, 1, "target", "1");
+                    RefillSlotDestinations.set(p, 1, "destination", RefillTargets.inventory(10));
+                    RefillSlotDestinations.set(p, 1, "target", "1");
                 });
         h.assertTrue(
                 RefillDispatcher.tick(player) == 0
@@ -123,12 +123,12 @@ public final class RefillReturnGameTests {
         inner.removeItem(1, 1);
         inner.setItem(1, new ItemStack(Items.STONE, 5));
         inner.setChanged();
-        h.assertTrue(!RefillSettings.locked(saved(root), 1), "Emptying the slot clears its lock");
+        h.assertTrue(!RefillPouchSettings.locked(saved(root), 1), "Emptying the slot clears its lock");
         edit(
                 root,
                 p -> {
-                    RefillSlotSettings.set(p, 1, "destination", RefillTargets.inventory(10));
-                    RefillSlotSettings.set(p, 1, "target", "1");
+                    RefillSlotDestinations.set(p, 1, "destination", RefillTargets.inventory(10));
+                    RefillSlotDestinations.set(p, 1, "target", "1");
                 });
         h.assertTrue(
                 RefillDispatcher.tick(player) == 1
@@ -143,14 +143,14 @@ public final class RefillReturnGameTests {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 12));
         assign(pouch, 0, 9);
-        RefillSlotSettings.set(pouch, 0, "collect", "false");
+        RefillSlotDestinations.set(pouch, 0, "collect", "false");
         var root = install(player, pouch);
         player.getInventory().setItem(9, new ItemStack(Items.DIRT));
         h.assertTrue(RefillDispatcher.tick(player) == 1, "Replacement still happens");
         h.assertTrue(
                 player.getInventory().getItem(0).is(Items.DIRT)
                         && storage(saved(root)).getItem(1).isEmpty()
-                        && RefillSettings.lockedMask(saved(root)) == 0,
+                        && RefillPouchSettings.lockedMask(saved(root)) == 0,
                 "Old item goes to the inventory and nothing is locked");
         h.succeed();
     }
@@ -160,19 +160,19 @@ public final class RefillReturnGameTests {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 12));
         assign(pouch, 0, 9);
-        RefillSlotSettings.set(pouch, 0, "lock", "false");
+        RefillSlotDestinations.set(pouch, 0, "lock", "false");
         var root = install(player, pouch);
         player.getInventory().setItem(9, new ItemStack(Items.DIRT));
         RefillDispatcher.tick(player);
         h.assertTrue(
                 storage(saved(root)).getItem(1).is(Items.DIRT)
-                        && RefillSettings.lockedMask(saved(root)) == 0,
+                        && RefillPouchSettings.lockedMask(saved(root)) == 0,
                 "Collected item is stored without a lock");
         edit(
                 root,
                 p -> {
-                    RefillSlotSettings.set(p, 1, "destination", RefillTargets.inventory(10));
-                    RefillSlotSettings.set(p, 1, "target", "1");
+                    RefillSlotDestinations.set(p, 1, "destination", RefillTargets.inventory(10));
+                    RefillSlotDestinations.set(p, 1, "target", "1");
                 });
         h.assertTrue(
                 RefillDispatcher.tick(player) == 1
@@ -211,24 +211,24 @@ public final class RefillReturnGameTests {
     public static void thePauseRequestFlipsASlotLockWithoutTouchingItems(GameTestHelper h) {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 12), new ItemStack(Items.DIRT));
-        RefillSettings.setLocked(pouch, 1, true);
+        RefillPouchSettings.setLocked(pouch, 1, true);
         player.getInventory().setItem(0, pouch);
         var menu = new BagMenu(60, player.getInventory(), storage(pouch), pouch, 0, false);
         player.containerMenu = menu;
-        h.assertTrue(RefillSettings.locked(menu.filterSnapshot(), 1), "Snapshot carries the lock");
+        h.assertTrue(RefillPouchSettings.locked(menu.filterSnapshot(), 1), "Snapshot carries the lock");
         h.assertTrue(
                 menu.editFilter(
                         player, FilterActions.SET_REFILL_SLOT_LOCK, 1, "locked", "false"),
                 "Resume request is accepted");
         h.assertTrue(
-                !RefillSettings.locked(pouch, 1)
-                        && !RefillSettings.locked(menu.filterSnapshot(), 1),
+                !RefillPouchSettings.locked(pouch, 1)
+                        && !RefillPouchSettings.locked(menu.filterSnapshot(), 1),
                 "Lock is cleared on the pouch and in the snapshot");
         h.assertTrue(
                 storage(pouch).getItem(1).is(Items.DIRT), "Pausing never touches the stack");
         h.assertTrue(
                 menu.editFilter(player, FilterActions.SET_REFILL_SLOT_LOCK, 0, "locked", "true")
-                        && RefillSettings.locked(pouch, 0),
+                        && RefillPouchSettings.locked(pouch, 0),
                 "The same request pauses another slot");
         h.succeed();
     }
@@ -238,13 +238,13 @@ public final class RefillReturnGameTests {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 12), new ItemStack(Items.DIRT));
         assign(pouch, 1, 10);
-        RefillSettings.setLocked(pouch, 1, true);
+        RefillPouchSettings.setLocked(pouch, 1, true);
         var root = install(player, pouch);
         h.assertTrue(
                 RefillDispatcher.tick(player) == 0
                         && player.getInventory().getItem(10).isEmpty(),
                 "A locked slot supplies nothing");
-        edit(root, p -> RefillSettings.setLocked(p, 1, false));
+        edit(root, p -> RefillPouchSettings.setLocked(p, 1, false));
         h.assertTrue(
                 RefillDispatcher.tick(player) == 1
                         && player.getInventory().getItem(10).is(Items.DIRT),
@@ -256,7 +256,7 @@ public final class RefillReturnGameTests {
     public static void badPauseRequestsAreRejected(GameTestHelper h) {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 12), new ItemStack(Items.DIRT));
-        RefillSettings.setLocked(pouch, 1, true);
+        RefillPouchSettings.setLocked(pouch, 1, true);
         player.getInventory().setItem(0, pouch);
         var menu = new BagMenu(61, player.getInventory(), storage(pouch), pouch, 0, false);
         player.containerMenu = menu;
@@ -271,7 +271,7 @@ public final class RefillReturnGameTests {
         h.assertTrue(
                 !menu.editFilter(player, FilterActions.SET_REFILL_SLOT_LOCK, 1, "locked", "true"),
                 "A held stack blocks the request");
-        h.assertTrue(RefillSettings.locked(pouch, 1), "Rejected requests keep the lock");
+        h.assertTrue(RefillPouchSettings.locked(pouch, 1), "Rejected requests keep the lock");
         h.succeed();
     }
 }

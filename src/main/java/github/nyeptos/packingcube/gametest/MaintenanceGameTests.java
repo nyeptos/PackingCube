@@ -2,10 +2,10 @@ package github.nyeptos.packingcube.gametest;
 
 import com.mojang.authlib.GameProfile;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.EquippedBagAccess;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.menu.BagMenuOpener;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
@@ -39,7 +39,7 @@ import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class MaintenanceGameTests {
     /**
@@ -152,7 +152,7 @@ public final class MaintenanceGameTests {
                     "All bags remain unstackable");
         }
         helper.assertTrue(
-                RefillSettings.defaults()
+                RefillPouchSettings.defaults()
                         .equals(
                                 ModItems.REFILL_POUCH
                                         .get()
@@ -247,6 +247,6 @@ public final class MaintenanceGameTests {
     }
 
     private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(Packingcube.MODID, path);
+        return ResourceLocation.fromNamespaceAndPath(PackingCube.MODID, path);
     }
 }

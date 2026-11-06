@@ -2,7 +2,7 @@ package github.nyeptos.packingcube.gametest.gui;
 
 import com.google.gson.JsonParser;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.gui.layout.RadialLayout;
 import github.nyeptos.packingcube.gui.skin.GuiSurface;
 import github.nyeptos.packingcube.gui.skin.NineSliceAxis;
@@ -21,7 +21,7 @@ import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.Objects;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class GuiSurfaceGameTests {
     private static InputStream resource(String path) {
@@ -36,8 +36,8 @@ public final class GuiSurfaceGameTests {
                 new InputStreamReader(resource("gui_surfaces.json"), StandardCharsets.UTF_8)) {
             var entries = JsonParser.parseReader(reader).getAsJsonArray();
             h.assertTrue(
-                    entries.size() == 3 && GuiSurface.values().length == 3,
-                    "All three background files present");
+                    entries.size() == 4 && GuiSurface.values().length == 4,
+                    "All four background files present");
             for (var entry : entries) {
                 var asset = entry.getAsJsonObject();
                 GuiSurface surface = null;

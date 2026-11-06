@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.gametest.gui;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.gui.input.SliderGeometry;
 
 import net.minecraft.gametest.framework.GameTest;
@@ -9,7 +9,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /** Slider drag math: the knob and the reported value must agree at every position. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class SliderGeometryGameTests {
     @GameTest(template = "empty")

@@ -2,10 +2,10 @@ package github.nyeptos.packingcube.gametest.refill;
 
 import com.mojang.authlib.GameProfile;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.refill.RefillDispatcher;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.menu.*;
 import github.nyeptos.packingcube.network.FilterActions;
 import github.nyeptos.packingcube.registry.ModItems;
@@ -22,11 +22,10 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.OptionalInt;
-import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillOpeningGameTests {
     public static final class OpeningPlayer extends Player {
@@ -121,7 +120,7 @@ public final class RefillOpeningGameTests {
                             Integer.toString(i + 1)),
                     "Count setting accepted through real opener");
             h.assertTrue(
-                    RefillSlotSettings.get(menu.filterSnapshot(), i)
+                    RefillSlotDestinations.get(menu.filterSnapshot(), i)
                             .destination()
                             .equals("inventory:" + (18 + i)),
                     "Snapshot contains replaced destination");
@@ -134,7 +133,7 @@ public final class RefillOpeningGameTests {
         menu = (BagMenu) p.containerMenu;
         for (int i = 0; i < 9; i++)
             h.assertTrue(
-                    RefillSlotSettings.get(menu.filterSnapshot(), i)
+                    RefillSlotDestinations.get(menu.filterSnapshot(), i)
                             .destination()
                             .equals("inventory:" + (18 + i)),
                     "Reassigned target persists after reopening");

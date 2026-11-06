@@ -1,5 +1,8 @@
 package github.nyeptos.packingcube.event;
 
+import github.nyeptos.packingcube.bag.pickup.BagPickupHandler;
+import github.nyeptos.packingcube.bag.refill.RefillHandler;
+import github.nyeptos.packingcube.bag.station.StationHandler;
 import github.nyeptos.packingcube.command.BagCommands;
 
 import net.neoforged.bus.api.EventPriority;
@@ -22,6 +25,6 @@ public final class ModGameEvents {
         gameBus.addListener(EventPriority.LOWEST, RefillHandler::onTotem);
         gameBus.addListener(RefillHandler::onToss);
         gameBus.addListener(RefillHandler::onTick);
-        gameBus.addListener(StationHandler::onTick);
+        gameBus.addListener(EventPriority.LOWEST, StationHandler::onTick);
     }
 }

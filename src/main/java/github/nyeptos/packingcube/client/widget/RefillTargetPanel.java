@@ -2,7 +2,7 @@ package github.nyeptos.packingcube.client.widget;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.gui.animation.SlotFeedback;
 import github.nyeptos.packingcube.gui.input.RefillTargetInteraction;
@@ -55,7 +55,7 @@ public final class RefillTargetPanel {
     }
 
     private boolean selected(BagMenu menu, String id) {
-        return RefillSlotSettings.get(menu.filterSnapshot(), source).destination().equals(id);
+        return RefillSlotDestinations.get(menu.filterSnapshot(), source).destination().equals(id);
     }
 
     private static ResourceLocation texture(String file) {
@@ -103,6 +103,20 @@ public final class RefillTargetPanel {
             return;
         }
         List<Target> current = new ArrayList<>();
+        addBagTargets(menu, current);
+        addEquipmentTargets(menu, current);
+        addCuriosTargets(menu, current);
+        targets = List.copyOf(current);
+        // Every visible slot reacts to hover and press, not only the refill destinations. The
+        // pouch and inventory slots are marks only; they never become destinations.
+        List<Target> all = new ArrayList<>();
+        addHoverMarks(menu, all);
+        all.addAll(targets);
+        marks = List.copyOf(all);
+    }
+
+    /** The pouch contents. The nine source slots never become destinations. */
+    private void addBagTargets(BagMenu menu, List<Target> current) {
         // The source pouch's nine slots deliberately never become destinations.
         for (int i = 9; i < menu.visibleSlotCount(); i++) {
             var slot = menu.getSlot(i);
@@ -114,6 +128,10 @@ public final class RefillTargetPanel {
                             slot.getItem(),
                             null));
         }
+    }
+
+    /** The five equipment slots, drawn on the right of the bag. */
+    private void addEquipmentTargets(BagMenu menu, List<Target> current) {
         for (int i = 0; i < 5; i++)
             current.add(
                     new Target(
@@ -122,6 +140,10 @@ public final class RefillTargetPanel {
                             top + 34 + 18 * i,
                             menu.sideSlot(RefillTargets.inventory(EQUIPMENT_SLOTS[i])).getItem(),
                             ICONS[i]));
+    }
+
+    /** The Curios slots, five at a time. */
+    private void addCuriosTargets(BagMenu menu, List<Target> current) {
         var curios = menu.curiosTargets();
         total = curios.size();
         scroll = Math.clamp(scroll, 0, Math.max(0, total - 5));
@@ -137,22 +159,21 @@ public final class RefillTargetPanel {
                             menu.sideSlot(t.id()).getItem(),
                             t.icon()));
         }
-        targets = List.copyOf(current);
-        // Every visible slot reacts to hover and press, not only the refill destinations. The
-        // pouch and inventory slots are marks only; they never become destinations.
-        List<Target> all = new ArrayList<>();
-        for (int i = 0; i < menu.visibleSlotCount(); i++) {
-            var slot = menu.getSlot(i);
+    }
+
+    /** Hover-only marks. The bulk pouch intake is one of them. */
+    private void addHoverMarks(BagMenu menu, List<Target> all) {
+        // The bulk pouch's intake is one of these slots; the menu lists it next to the grid.
+        for (int index : menu.hoverSlotIndices()) {
+            var slot = menu.getSlot(index);
             all.add(
                     new Target(
-                            "slot:" + i,
+                            "slot:" + index,
                             left + slot.x - 1,
                             top + slot.y - 1,
                             slot.getItem(),
                             null));
         }
-        all.addAll(targets);
-        marks = List.copyOf(all);
     }
 
     private static Target at(List<Target> list, double x, double y) {

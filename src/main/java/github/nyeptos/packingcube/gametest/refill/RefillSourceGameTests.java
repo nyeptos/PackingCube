@@ -1,12 +1,12 @@
 package github.nyeptos.packingcube.gametest.refill;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.bag.refill.RefillDispatcher;
 import github.nyeptos.packingcube.bag.refill.RefillService;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.bag.refill.RefillSupply;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.gametest.support.LegacyRefillFixture;
@@ -25,9 +25,8 @@ import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-import java.util.Set;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillSourceGameTests {
     private static BagInventory storage(ItemStack p) {
@@ -57,8 +56,8 @@ public final class RefillSourceGameTests {
     }
 
     private static void assign(ItemStack pouch, int source, int destination, int target) {
-        RefillSlotSettings.set(pouch, source, "destination", RefillTargets.inventory(destination));
-        RefillSlotSettings.set(pouch, source, "target", Integer.toString(target));
+        RefillSlotDestinations.set(pouch, source, "destination", RefillTargets.inventory(destination));
+        RefillSlotDestinations.set(pouch, source, "target", Integer.toString(target));
     }
 
     @GameTest(template = "empty")
@@ -69,12 +68,12 @@ public final class RefillSourceGameTests {
         view.source(8);
         view.page(RefillSettingsView.METHOD);
         h.assertTrue(
-                ItemStack.matches(original, pouch) && RefillSlotSettings.mapped(pouch),
+                ItemStack.matches(original, pouch) && RefillSlotDestinations.mapped(pouch),
                 "Browsing does not change new source-rule settings");
         assign(pouch, 0, 9, 3);
         assign(pouch, 1, 9, 7);
-        RefillSlotSettings.set(pouch, 1, "replace", "true");
-        RefillSlotSettings.set(pouch, 1, "priority", "9");
+        RefillSlotDestinations.set(pouch, 1, "replace", "true");
+        RefillSlotDestinations.set(pouch, 1, "priority", "9");
         view.source(0);
         h.assertTrue(
                 view.rule(pouch).target() == 3 && !view.rule(pouch).replace(),
@@ -86,9 +85,9 @@ public final class RefillSourceGameTests {
                         && view.rule(pouch).priority() == 9,
                 "Second source independent, duplicate destination allowed");
         var snapshot = ModItems.REFILL_POUCH.get().getDefaultInstance();
-        RefillSettings.copySettings(pouch, snapshot);
+        RefillPouchSettings.copySettings(pouch, snapshot);
         h.assertTrue(
-                RefillSlotSettings.get(snapshot, 1).equals(RefillSlotSettings.get(pouch, 1)),
+                RefillSlotDestinations.get(snapshot, 1).equals(RefillSlotDestinations.get(pouch, 1)),
                 "Radial preview includes source settings");
         h.succeed();
     }
@@ -117,15 +116,15 @@ public final class RefillSourceGameTests {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 20), new ItemStack(Items.DIRT, 20));
         assign(pouch, 0, 0, 4);
-        RefillSlotSettings.set(pouch, 0, "enabled", "false");
+        RefillSlotDestinations.set(pouch, 0, "enabled", "false");
         var root = install(p, pouch);
         h.assertTrue(
                 RefillDispatcher.tick(p) == 0 && count(root, 0) == 20,
                 "OFF and unassigned sources never supply");
         var parent = new BagInventory(root, true, () -> {});
         var mounted = parent.getItem(0);
-        RefillSlotSettings.set(mounted, 0, "enabled", "true");
-        RefillSettings.set(mounted, "filter", "true");
+        RefillSlotDestinations.set(mounted, 0, "enabled", "true");
+        RefillPouchSettings.set(mounted, "filter", "true");
         BagFilter.setExcluding(mounted, false);
         parent.setChanged();
         h.assertTrue(
@@ -154,7 +153,7 @@ public final class RefillSourceGameTests {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 10));
         assign(pouch, 0, 0, 4);
-        RefillSlotSettings.set(pouch, 0, "replace", "true");
+        RefillSlotDestinations.set(pouch, 0, "replace", "true");
         var root = install(p, pouch);
         p.getInventory().setItem(0, new ItemStack(Items.DIRT, 7));
         h.assertTrue(
@@ -175,7 +174,7 @@ public final class RefillSourceGameTests {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 10));
         assign(pouch, 0, 0, 4);
-        RefillSlotSettings.set(pouch, 0, "replace", "true");
+        RefillSlotDestinations.set(pouch, 0, "replace", "true");
         var root = install(p, pouch);
         for (int i = 0; i < 36; i++)
             if (i != 8) p.getInventory().setItem(i, new ItemStack(Items.DIAMOND, 64));
@@ -194,9 +193,9 @@ public final class RefillSourceGameTests {
         var pouch = pouch(new ItemStack(Items.DIRT, 12), new ItemStack(Items.STONE, 12));
         assign(pouch, 0, 0, 4);
         assign(pouch, 1, 0, 4);
-        RefillSlotSettings.set(pouch, 0, "replace", "true");
-        RefillSlotSettings.set(pouch, 1, "replace", "true");
-        RefillSlotSettings.set(pouch, 1, "priority", "9");
+        RefillSlotDestinations.set(pouch, 0, "replace", "true");
+        RefillSlotDestinations.set(pouch, 1, "replace", "true");
+        RefillSlotDestinations.set(pouch, 1, "priority", "9");
         var root = install(p, pouch);
         h.assertTrue(
                 RefillDispatcher.tick(p) == 4
@@ -252,7 +251,7 @@ public final class RefillSourceGameTests {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.ENDER_PEARL, 16));
         assign(pouch, 0, 0, 64);
-        RefillSlotSettings.set(pouch, 0, "threshold", "2");
+        RefillSlotDestinations.set(pouch, 0, "threshold", "2");
         var root = install(p, pouch);
         p.getInventory().setItem(0, new ItemStack(Items.ENDER_PEARL, 3));
         h.assertTrue(
@@ -366,7 +365,7 @@ public final class RefillSourceGameTests {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 12));
         assign(pouch, 0, 8, 4);
-        RefillSlotSettings.set(pouch, 0, "replace", "true");
+        RefillSlotDestinations.set(pouch, 0, "replace", "true");
         var root = install(p, pouch);
         h.assertTrue(
                 RefillDispatcher.tick(p) == 0 && count(root, 0) == 12,
@@ -383,7 +382,7 @@ public final class RefillSourceGameTests {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 10));
         assign(pouch, 0, 0, 4);
-        RefillSlotSettings.set(pouch, 0, "replace", "true");
+        RefillSlotDestinations.set(pouch, 0, "replace", "true");
         var root = install(p, pouch);
         for (int j = 0; j < 36; j++)
             if (j != 8) p.getInventory().setItem(j, new ItemStack(Items.DIAMOND, 64));
@@ -402,8 +401,8 @@ public final class RefillSourceGameTests {
     public static void perSourceOffAlsoBlocksTradeWithdrawal(GameTestHelper h) {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.STONE, 12), new ItemStack(Items.STONE, 12));
-        RefillSlotSettings.set(pouch, 0, "enabled", "false");
-        RefillSlotSettings.set(pouch, 1, "priority", "9");
+        RefillSlotDestinations.set(pouch, 0, "enabled", "false");
+        RefillSlotDestinations.set(pouch, 1, "priority", "9");
         var root = install(p, pouch);
         var supplies = RefillSupply.collect(p, true);
         h.assertTrue(
@@ -424,7 +423,7 @@ public final class RefillSourceGameTests {
         var p = h.makeMockPlayer(GameType.SURVIVAL);
         var pouch = pouch(new ItemStack(Items.DIAMOND_HELMET));
         assign(pouch, 0, 39, 1);
-        RefillSlotSettings.set(pouch, 0, "replace", "true");
+        RefillSlotDestinations.set(pouch, 0, "replace", "true");
         var root = install(p, pouch);
         var old = new ItemStack(Items.IRON_HELMET);
         old.enchant(
@@ -447,7 +446,7 @@ public final class RefillSourceGameTests {
     public static void newPouchHasNoImplicitDestinationsAndOldPouchStillMigrates(GameTestHelper h) {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var fresh = pouch(new ItemStack(Items.STONE, 12));
-        h.assertTrue(RefillSlotSettings.mapped(fresh), "New default is explicit source rules");
+        h.assertTrue(RefillSlotDestinations.mapped(fresh), "New default is explicit source rules");
         install(player, fresh);
         player.getInventory().selected = 0;
         h.assertTrue(
@@ -460,12 +459,12 @@ public final class RefillSourceGameTests {
         view.source(4);
         view.page(RefillSettingsView.METHOD);
         h.assertTrue(
-                !RefillSlotSettings.mapped(old) && ItemStack.matches(old, before),
+                !RefillSlotDestinations.mapped(old) && ItemStack.matches(old, before),
                 "Browsing old pouch leaves saved behavior intact");
-        RefillSlotSettings.set(old, 4, "destination", "inventory:9");
+        RefillSlotDestinations.set(old, 4, "destination", "inventory:9");
         h.assertTrue(
-                RefillSlotSettings.mapped(old)
-                        && RefillSlotSettings.get(old, 4).destination().equals("inventory:9"),
+                RefillSlotDestinations.mapped(old)
+                        && RefillSlotDestinations.get(old, 4).destination().equals("inventory:9"),
                 "Explicit edit switches old pouch to source rules");
         h.succeed();
     }
@@ -528,7 +527,7 @@ public final class RefillSourceGameTests {
         }
         for (int i = 0; i < 9; i++)
             h.assertTrue(
-                    RefillSlotSettings.get(saved(root), i)
+                    RefillSlotDestinations.get(saved(root), i)
                             .destination()
                             .equals(RefillTargets.inventory(9 + i)),
                     "Source " + (i + 1) + " persists independently");

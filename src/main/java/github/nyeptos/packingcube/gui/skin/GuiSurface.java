@@ -3,6 +3,7 @@ package github.nyeptos.packingcube.gui.skin;
 /** Artist-supplied backgrounds. GUI label text is white in every interaction state. */
 public enum GuiSurface {
     BAG_INVENTORY("gui/container/bag_inventory.png", 176, 132, 0),
+    BULK_POUCH("gui/container/bulk_pouch.png", 176, 140, 0),
     SETTINGS_PANEL("gui/container/settings_panel.png", 244, 132, 4),
     RADIAL_BACKGROUND("gui/radial/background.png", 220, 220, 4);
     public static final int TEXT_COLOR = 0xffffff;

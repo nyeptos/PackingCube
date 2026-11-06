@@ -2,22 +2,18 @@ package github.nyeptos.packingcube.menu;
 
 import github.nyeptos.packingcube.bag.BagIdentity;
 import github.nyeptos.packingcube.bag.BagInventory;
+import github.nyeptos.packingcube.bag.BulkStore;
 import github.nyeptos.packingcube.bag.filter.BagFilter;
-import github.nyeptos.packingcube.bag.pickup.BagPickupSettings;
 import github.nyeptos.packingcube.bag.pickup.BagRouter;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.compat.BagEquipment;
-import github.nyeptos.packingcube.network.FilterActions;
+import github.nyeptos.packingcube.network.EquipmentTargetCodec;
 import github.nyeptos.packingcube.registry.ModItems;
 import github.nyeptos.packingcube.registry.ModMenus;
 
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Container;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -46,6 +42,9 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
     private final List<BagEquipment.Target> curiosTargets;
     private final List<String> sideIds = new ArrayList<>();
     private int sideStart;
+    private final SimpleContainer bulkInput = new SimpleContainer(1);
+    private int bulkInputSlot = -1;
+    private final Inventory playerInventory;
     private static final int[] EQUIPMENT_INDICES = {39, 38, 37, 36, 40};
 
     public List<BagEquipment.Target> curiosTargets() {
@@ -61,47 +60,23 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         return index >= sideStart && index < slots.size();
     }
 
-    public static void writeCuriosTargets(
-            RegistryFriendlyByteBuf data, List<BagEquipment.Target> targets) {
-        data.writeVarInt(targets.size());
-        for (var target : targets) {
-            data.writeUtf(target.id(), 256);
-            data.writeResourceLocation(target.icon());
-        }
-    }
-
-    private static List<BagEquipment.Target> readCuriosTargets(RegistryFriendlyByteBuf data) {
-        int count = data.readVarInt();
-        if (count < 0 || count > 4096)
-            throw new IllegalArgumentException("Invalid Curios slot count");
-        List<BagEquipment.Target> targets = new ArrayList<>();
-        for (int i = 0; i < count; i++) {
-            String id = data.readUtf(256);
-            if (!RefillTargets.valid(id)
-                    || !id.startsWith("curios:")
-                    || targets.stream().anyMatch(t -> t.id().equals(id)))
-                throw new IllegalArgumentException("Invalid Curios slot ID");
-            targets.add(new BagEquipment.Target(id, data.readResourceLocation(), ItemStack.EMPTY));
-        }
-        return List.copyOf(targets);
-    }
-
     // Read-only synchronization slots: settings snapshot and one ghost sample.
     private final SimpleContainer editorState = new SimpleContainer(2);
 
     public static BagMenu fromNetwork(int id, Inventory inventory, RegistryFriendlyByteBuf data) {
         int ownerSlot = data.readVarInt();
         boolean modules = data.readBoolean();
+        int slots = data.readVarInt();
+        boolean bulk = data.readBoolean();
         return new BagMenu(
                 id,
                 inventory,
-                new SimpleContainer(
-                        modules ? BagInventory.MODULE_SLOTS : BagInventory.FILTER_SLOTS),
+                BagInventory.mirror(slots, bulk),
                 ItemStack.EMPTY,
                 ownerSlot,
                 modules,
                 data.readBoolean(),
-                readCuriosTargets(data),
+                EquipmentTargetCodec.read(data),
                 true);
     }
 
@@ -167,6 +142,7 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
             boolean clientMirror) {
         super(ModMenus.BAG_MENU.get(), id);
         this.curiosTargets = List.copyOf(curiosTargets);
+        this.playerInventory = inventory;
         this.contents = contents;
         this.root = root;
         this.rootId = root.isEmpty() ? null : BagIdentity.renew(root);
@@ -176,30 +152,70 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         this.modules = modules;
         this.refill = refill;
         this.bagSlots = contents.getContainerSize();
-        int rows = bagSlots / 9;
-        for (int row = 0; row < rows; row++) {
-            for (int column = 0; column < 9; column++) {
-                addSlot(
-                        new Slot(contents, column + row * 9, 8 + column * 18, 18 + row * 18) {
-                            @Override
-                            public boolean mayPlace(ItemStack stack) {
-                                return BagInventory.accepts(modules, stack)
-                                        && (modules
-                                                || refill
-                                                || BagFilter.matches(filterSnapshot(), stack));
-                            }
-                        });
-            }
+        // The pouch frame is 132 tall; the bulk pouch has its own 140-tall window with one more row.
+        int top = isBulk() ? 56 : 49;
+        addBagSlots();
+        addPlayerSlots(inventory, top);
+        if (isBulk()) addBulkInputSlot();
+        addEditorSlots();
+        addEquipmentSlots(inventory);
+        addCuriosSlots(inventory, clientMirror);
+        refreshFilterSnapshot();
+    }
+
+    /** The pouch contents. The bulk pouch has one tall slot that hands out a stack at a time. */
+    private void addBagSlots() {
+        for (int index = 0; index < bagSlots; index++) {
+            int column = index % 9;
+            int row = index / 9;
+            final int slotIndex = index;
+            addSlot(
+                    new Slot(
+                            contents,
+                            slotIndex,
+                            isBulk() ? 116 : 8 + column * 18,
+                            isBulk() ? 17 : 18 + row * 18) {
+                        @Override
+                        public boolean mayPlace(ItemStack stack) {
+                            if (!BagInventory.accepts(modules, stack)) return false;
+                            if (contents instanceof BagInventory storage && storage.bulk())
+                                return storage.canPlaceItem(slotIndex, stack);
+                            if (!modules
+                                    && !refill
+                                    && !BagFilter.matches(filterSnapshot(), stack)) return false;
+                            return true;
+                        }
+
+                        @Override
+                        public ItemStack remove(int amount) {
+                            if (!isBulk()) return super.remove(amount);
+                            // The stored amount can pass a stack; a hand can still hold only one.
+                            int cap = Math.max(1, getItem().getMaxStackSize());
+                            return super.remove(Math.min(amount, cap));
+                        }
+                    });
         }
-        int offset = (rows - 4) * 18;
+    }
+
+    /** The 27 inventory slots and the hotbar, laid out under the pouch. */
+    private void addPlayerSlots(Inventory inventory, int top) {
         for (int row = 0; row < 3; row++) {
             for (int column = 0; column < 9; column++) {
-                addPlayerSlot(
-                        inventory, column + row * 9 + 9, 8 + column * 18, 103 + row * 18 + offset);
+                addPlayerSlot(inventory, column + row * 9 + 9, 8 + column * 18, top + row * 18);
             }
         }
         for (int column = 0; column < 9; column++)
-            addPlayerSlot(inventory, column, 8 + column * 18, 161 + offset);
+            addPlayerSlot(inventory, column, 8 + column * 18, top + 58);
+    }
+
+    /** The bulk pouch input slot, which takes a whole stack beyond the vanilla limit. */
+    private void addBulkInputSlot() {
+        bulkInputSlot = slots.size();
+        addSlot(new BulkInputSlot(bulkInput, 0, 44, 17));
+    }
+
+    /** Two hidden slots that hold the filter editor sample copy. */
+    private void addEditorSlots() {
         for (int i = 0; i < 2; i++) {
             addSlot(
                     new Slot(editorState, i, -10000, -10000) {
@@ -219,6 +235,10 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
                         }
                     });
         }
+    }
+
+    /** The equipment side slots; placement and pickup follow the vanilla inventory slots. */
+    private void addEquipmentSlots(Inventory inventory) {
         sideStart = slots.size();
         for (int index : EQUIPMENT_INDICES) {
             int vanillaIndex = index < 40 ? 44 - index : 45;
@@ -257,6 +277,10 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
                         }
                     });
         }
+    }
+
+    /** The Curios side slots, or a local stand-in when the player has no such slot. */
+    private void addCuriosSlots(Inventory inventory, boolean clientMirror) {
         for (var target : this.curiosTargets) {
             sideIds.add(target.id());
             Slot slot =
@@ -294,7 +318,6 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
                         };
             addSlot(slot);
         }
-        refreshFilterSnapshot();
     }
 
     private void addPlayerSlot(Inventory inventory, int index, int x, int y) {
@@ -329,12 +352,134 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         return refill;
     }
 
+    /** A bulk pouch keeps one kind of item in a single slot with a large amount. */
+    public boolean isBulk() {
+        return contents instanceof BagInventory storage && storage.bulk();
+    }
+
+    public int bulkAmount() {
+        return isBulk() ? contents.getItem(0).getCount() : 0;
+    }
+
+    /** Index of the bulk pouch's intake slot, or -1 for every other bag. */
+    public int bulkInputSlot() {
+        return bulkInputSlot;
+    }
+
+    /**
+     * Every slot that reacts to hover. The bulk pouch's intake sits outside the 3x9 grid, so it is
+     * not part of {@link #visibleSlotCount()} and has to be listed here by hand.
+     */
+    public List<Integer> hoverSlotIndices() {
+        List<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < visibleSlotCount(); i++) indices.add(i);
+        if (bulkInputSlot >= 0) indices.add(bulkInputSlot);
+        return indices;
+    }
+
+    /** How many items one hand-out takes, as set in the pouch's settings. */
+    /** One hand-out, always a single stack: the store never floods the inventory at once. */
+    public int bulkTakeAmount() {
+        ItemStack stored = contents.getItem(0);
+        return stored.isEmpty() ? 64 : Math.max(1, stored.getMaxStackSize());
+    }
+
+    /** Merges a stack into the stored count. Returns how many items went in. */
+    public int absorbBulk(ItemStack stack) {
+        if (!isBulk() || stack.isEmpty()) return 0;
+        ItemStack stored = contents.getItem(0);
+        if (!stored.isEmpty() && !ItemStack.isSameItemSameComponents(stored, stack)) return 0;
+        int held = stored.isEmpty() ? 0 : stored.getCount();
+        int moved = Math.min(stack.getCount(), BulkStore.LIMIT - held);
+        if (moved <= 0) return 0;
+        contents.setItem(0, stack.copyWithCount(held + moved));
+        stack.shrink(moved);
+        return moved;
+    }
+
+    /** Fills matching stacks first, then empty ones, across the inventory and hotbar. */
+    private static int fillInventory(Player player, ItemStack out) {
+        Inventory inventory = player.getInventory();
+        int max = Math.max(1, out.getMaxStackSize());
+        int remaining = out.getCount();
+        for (int pass = 0; pass < 2 && remaining > 0; pass++) {
+            for (int i = 0; i < 36 && remaining > 0; i++) {
+                ItemStack slot = inventory.getItem(i);
+                if (pass == 0) {
+                    if (slot.isEmpty() || !ItemStack.isSameItemSameComponents(slot, out)) continue;
+                    int room = Math.min(max, slot.getMaxStackSize()) - slot.getCount();
+                    if (room <= 0) continue;
+                    int moved = Math.min(room, remaining);
+                    slot.grow(moved);
+                    remaining -= moved;
+                } else if (slot.isEmpty()) {
+                    int moved = Math.min(max, remaining);
+                    inventory.setItem(i, out.copyWithCount(moved));
+                    remaining -= moved;
+                }
+            }
+        }
+        inventory.setChanged();
+        return out.getCount() - remaining;
+    }
+
+    /**
+     * Hands out the chosen amount: inventory and hotbar first, then the ground. The client only
+     * sends a number, so the server decides what is actually available.
+     */
+    public int takeBulk(Player player, int requestContainerId, int amount) {
+        if (player.level().isClientSide
+                || player.containerMenu != this
+                || containerId != requestContainerId
+                || !isBulk()
+                || player.isSpectator()
+                || !getCarried().isEmpty()
+                || !stillValid(player)) return 0;
+        ItemStack stored = contents.getItem(0);
+        if (stored.isEmpty()) return 0;
+        int wanted = Math.max(1, Math.min(amount, stored.getCount()));
+        int perStack = Math.max(1, stored.getMaxStackSize());
+        int handed = 0;
+        while (wanted > 0) {
+            int chunk = Math.min(wanted, perStack);
+            ItemStack out = stored.copyWithCount(chunk);
+            int moved = fillInventory(player, out);
+            handed += moved;
+            int left = chunk - moved;
+            if (left > 0) {
+                player.drop(out.copyWithCount(left), false);
+                handed += left;
+            }
+            wanted -= chunk;
+        }
+        stored.shrink(handed);
+        if (stored.isEmpty()) contents.setItem(0, ItemStack.EMPTY);
+        else contents.setChanged();
+        return handed;
+    }
+
     public int visibleSlotCount() {
         return bagSlots + 36;
     }
 
     public ItemStack filterSnapshot() {
         return editorState.getItem(0);
+    }
+
+    /** The handler sees the same flags the menu validated against. */
+    boolean modulesOnly() {
+        return modules;
+    }
+
+    SimpleContainer editorState() {
+        return editorState;
+    }
+
+    /** Every accepted edit saves the bag, refreshes the synced view and pushes it to the client. */
+    void markEdited() {
+        contents.setChanged();
+        refreshFilterSnapshot();
+        broadcastChanges();
     }
 
     public ItemStack sample() {
@@ -346,7 +491,11 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         ItemStack snapshot =
                 (modules
                                 ? ModItems.LARGE_BAG
-                                : refill ? ModItems.REFILL_POUCH : ModItems.STORAGE_POUCH)
+                                : refill
+                                        ? ModItems.REFILL_POUCH
+                                        : storage.bagStack().is(ModItems.BULK_POUCH.get())
+                                                ? ModItems.BULK_POUCH
+                                                : ModItems.STORAGE_POUCH)
                         .get()
                         .getDefaultInstance();
         if (!modules) {
@@ -367,153 +516,7 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
                 || player.isSpectator()
                 || !stillValid(player)
                 || !(contents instanceof BagInventory storage)) return false;
-        if (operation == FilterActions.SET_REFILL_SOURCE) {
-            if (modules
-                    || !refill
-                    || sampleSlot < 0
-                    || sampleSlot >= 9
-                    || (field.equals("destination") && !getCarried().isEmpty())) return false;
-            if (field.equals("destination") && !value.isEmpty()) {
-                if (!RefillTargets.valid(value)) return false;
-                if (value.startsWith("curios:")
-                        && BagEquipment.refillTargets(player).stream()
-                                .noneMatch(t -> t.id().equals(value))) return false;
-            }
-            if (!RefillSlotSettings.set(storage.bagStack(), sampleSlot, field, value)) return false;
-            contents.setChanged();
-            refreshFilterSnapshot();
-            broadcastChanges();
-            return true;
-        }
-        if (operation == FilterActions.SET_REFILL_SLOT_LOCK) {
-            if (modules
-                    || !refill
-                    || sampleSlot < 0
-                    || sampleSlot >= RefillSettings.LOCK_SLOTS
-                    || !field.equals("locked")
-                    || !(value.equals("true") || value.equals("false"))
-                    || !getCarried().isEmpty()) return false;
-            RefillSettings.setLocked(
-                    storage.bagStack(), sampleSlot, Boolean.parseBoolean(value));
-            contents.setChanged();
-            refreshFilterSnapshot();
-            broadcastChanges();
-            return true;
-        }
-        if (operation == FilterActions.SET_REFILL_TARGET) {
-            if (modules
-                    || !refill
-                    || sampleSlot != -1
-                    || !(field.equals("true") || field.equals("false"))
-                    || !getCarried().isEmpty()
-                    || !RefillTargets.valid(value)) return false;
-            if (value.startsWith("curios:")
-                    && BagEquipment.refillTargets(player).stream()
-                            .noneMatch(t -> t.id().equals(value))) return false;
-            if (!RefillTargets.set(storage.bagStack(), value, Boolean.parseBoolean(field)))
-                return false;
-            contents.setChanged();
-            refreshFilterSnapshot();
-            broadcastChanges();
-            return true;
-        }
-        if (operation == FilterActions.SET_REFILL_OPTION) {
-            if (modules
-                    || !refill
-                    || sampleSlot != -1
-                    || !RefillSettings.set(storage.bagStack(), field, value)) return false;
-            contents.setChanged();
-            refreshFilterSnapshot();
-            broadcastChanges();
-            return true;
-        }
-        if (operation == FilterActions.SET_HOTBAR_REFILL
-                || operation == FilterActions.SET_TRADE_REFILL) {
-            boolean trade = operation == FilterActions.SET_TRADE_REFILL;
-            if (modules
-                    || !refill
-                    || sampleSlot != -1
-                    || !field.equals(trade ? "trade" : "hotbar")
-                    || !(value.equals("true") || value.equals("false"))) return false;
-            RefillSettings.setEnabled(storage.bagStack(), trade, Boolean.parseBoolean(value));
-            contents.setChanged();
-            refreshFilterSnapshot();
-            broadcastChanges();
-            return true;
-        }
-        if (operation == FilterActions.SET_PICKUP_ENABLED) {
-            if (modules
-                    || refill
-                    || sampleSlot != -1
-                    || !field.equals("pickup")
-                    || !(value.equals("true") || value.equals("false"))) return false;
-            BagPickupSettings.setEnabled(storage.bagStack(), Boolean.parseBoolean(value));
-            contents.setChanged();
-            refreshFilterSnapshot();
-            broadcastChanges();
-            return true;
-        }
-        if (operation == FilterActions.SET_PICKUP_PRIORITY) {
-            if (modules || sampleSlot != -1 || !field.equals("priority") || !value.matches("[0-9]"))
-                return false;
-            BagPickupSettings.setPriority(storage.bagStack(), Integer.parseInt(value));
-            contents.setChanged();
-            refreshFilterSnapshot();
-            broadcastChanges();
-            return true;
-        }
-        if (modules) return false;
-        if (operation == FilterActions.SAMPLE_CURSOR) {
-            if (!field.isEmpty() || !(value.equals("copy") || value.equals("clear"))) return false;
-            ItemStack source = value.equals("clear") ? ItemStack.EMPTY : getCarried();
-            if (BagInventory.isBag(source)) return false;
-            // A ghost reference only. Never split, shrink, insert, return or drop the source stack.
-            editorState.setItem(1, source.isEmpty() ? ItemStack.EMPTY : source.copyWithCount(1));
-            broadcastChanges();
-            return true;
-        }
-        if (operation == FilterActions.SAMPLE_SLOT) {
-            if (sampleSlot < 0 || sampleSlot >= visibleSlotCount()) return false;
-            ItemStack actual = slots.get(sampleSlot).getItem();
-            if (BagInventory.isBag(actual)) return false;
-            editorState.setItem(1, actual.isEmpty() ? ItemStack.EMPTY : actual.copyWithCount(1));
-            broadcastChanges();
-            return true;
-        }
-        if (operation == FilterActions.SET_MODE) {
-            if (!field.equals("mode") || !(value.equals("include") || value.equals("exclude")))
-                return false;
-            BagFilter.setExcluding(storage.bagStack(), value.equals("exclude"));
-            contents.setChanged();
-            refreshFilterSnapshot();
-            broadcastChanges();
-            return true;
-        }
-        if (!BagFilter.FIELDS.contains(field)) return false;
-        ResourceLocation id = ResourceLocation.tryParse(value);
-        if (id == null) return false;
-        boolean changed;
-        if (operation == FilterActions.ADD_RULE) {
-            ItemStack sample = sample();
-            if (sample.isEmpty()) return false;
-            if (field.equals("items") || field.equals("exclude_items")) {
-                if (!BuiltInRegistries.ITEM.getKey(sample.getItem()).equals(id)) return false;
-            } else if (sample.getTags().noneMatch(tag -> tag.location().equals(id))) return false;
-            changed = BagFilter.add(storage.bagStack(), field, id);
-            if (!changed)
-                player.displayClientMessage(
-                        Component.translatable(
-                                "message.packingcube.filter_limit", BagFilter.MAX_RULES),
-                        false);
-        } else if (operation == FilterActions.REMOVE_RULE) {
-            changed = BagFilter.remove(storage.bagStack(), field, id);
-        } else return false;
-        if (changed) {
-            contents.setChanged(); // Also saves a mounted module back into its parent.
-            refreshFilterSnapshot();
-            broadcastChanges();
-        }
-        return changed;
+        return FilterActionHandler.apply(this, player, storage, operation, sampleSlot, field, value);
     }
 
     /**
@@ -570,12 +573,36 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
     @Override
     public void clicked(int slotId, int button, ClickType type, Player player) {
         if (!player.level().isClientSide && !stillValid(player)) return;
-        if (slotId >= visibleSlotCount() && !isSideSlot(slotId)) return;
-        super.clicked(slotId, button, type, player);
+        if (slotId >= visibleSlotCount() && slotId != bulkInputSlot && !isSideSlot(slotId)) return;
+        if (isBulk() && slotId == 0 && type == ClickType.SWAP && swapOneStackOut(player, button)) {
+            // Handled here so the whole stored amount never leaves in one gesture.
+        } else {
+            super.clicked(slotId, button, type, player);
+        }
         if (!player.level().isClientSide && !locateRoot(player)) {
             // Dropped or otherwise outside inventory/cursor: stop editing immediately.
             player.closeContainer();
         }
+    }
+
+    /**
+     * A number key or F on the output hands over one stack into that slot. Vanilla would move the
+     * whole stored amount and then clear the pouch, which a bulk pouch must never allow.
+     */
+    private boolean swapOneStackOut(Player player, int button) {
+        if (button != Inventory.SLOT_OFFHAND && (button < 0 || button > 8)) return false;
+        if (player.level().isClientSide) return true;
+        ItemStack stored = contents.getItem(0);
+        if (stored.isEmpty()) return true;
+        var inventory = player.getInventory();
+        if (!inventory.getItem(button).isEmpty()) return true;
+        int amount = Math.min(Math.max(1, stored.getMaxStackSize()), stored.getCount());
+        inventory.setItem(button, stored.copyWithCount(amount));
+        stored.shrink(amount);
+        if (stored.isEmpty()) contents.setItem(0, ItemStack.EMPTY);
+        else contents.setChanged();
+        inventory.setChanged();
+        return true;
     }
 
     @Override
@@ -583,6 +610,71 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         return slot.container != editorState
                 && !isSideSlot(slot.index)
                 && super.canTakeItemForPickAll(stack, slot);
+    }
+
+    /**
+     * The bulk pouch's intake. It never keeps anything of its own: whatever lands here is merged
+     * into the stored count and the slot reads as empty again, so a stack can be poured in over
+     * and over instead of being blocked once the stored amount passes a stack.
+     */
+    private final class BulkInputSlot extends Slot {
+        private BulkInputSlot(Container container, int slot, int x, int y) {
+            super(container, slot, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            if (!BagInventory.accepts(modules, stack)) return false;
+            ItemStack stored = contents.getItem(0);
+            if (stored.isEmpty())
+                return !(contents instanceof BagInventory storage)
+                        || storage.canPlaceItem(0, stack);
+            return stored.getCount() < BulkStore.LIMIT
+                    && ItemStack.isSameItemSameComponents(stored, stack);
+        }
+
+        @Override
+        public boolean mayPickup(Player player) {
+            return false;
+        }
+
+        @Override
+        public ItemStack getItem() {
+            return ItemStack.EMPTY;
+        }
+
+        @Override
+        public int getMaxStackSize(ItemStack stack) {
+            ItemStack stored = contents.getItem(0);
+            int room = BulkStore.LIMIT - (stored.isEmpty() ? 0 : stored.getCount());
+            return Math.max(0, Math.min(stack.getMaxStackSize(), room));
+        }
+
+        @Override
+        public void set(ItemStack stack) {
+            absorb(stack);
+        }
+
+        @Override
+        public void setByPlayer(ItemStack stack) {
+            absorb(stack);
+        }
+
+        @Override
+        public void setByPlayer(ItemStack stack, ItemStack previous) {
+            absorb(stack);
+        }
+
+        private void absorb(ItemStack stack) {
+            if (stack.isEmpty()) return;
+            absorbBulk(stack);
+            if (stack.isEmpty()) return;
+            // Past the limit: hand the rest back rather than lose it.
+            ItemStack left = stack.copy();
+            stack.setCount(0);
+            if (!playerInventory.player.getInventory().add(left))
+                playerInventory.player.drop(left, false);
+        }
     }
 
     @Override
@@ -598,15 +690,22 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
             if (!moveItemStackTo(stack, bagSlots, visibleSlotCount(), false))
                 return ItemStack.EMPTY;
         } else if (index < bagSlots) {
+            if (isBulk()) {
+                // One stack leaves through the take path, so a bulk amount never floods the
+                // inventory in a single shift-click.
+                takeBulk(player, containerId, bulkTakeAmount());
+                return ItemStack.EMPTY;
+            }
             if (!moveItemStackTo(stack, bagSlots, visibleSlotCount(), true)) return ItemStack.EMPTY;
         } else {
             // An empty matching equipment/Curios slot wins over the bag. An occupied slot is never
-            // swapped out, so a full equipment set falls through to the normal bag stow.
+            // swapped out, so full equipment set falls through to the normal bag stow.
             equipIntoEmptySideSlot(stack);
+            if (!stack.isEmpty() && isBulk()) absorbBulk(stack);
             // Vanilla's merge-into-existing-stacks path does not call Slot.mayPlace.
             // Check before attempting any merge so old, now-disallowed contents cannot bypass the
             // filter.
-            if (!stack.isEmpty() && slots.get(0).mayPlace(stack))
+            if (!stack.isEmpty() && !isBulk() && slots.get(0).mayPlace(stack))
                 moveItemStackTo(stack, 0, bagSlots, false);
         }
         if (stack.isEmpty()) slot.setByPlayer(ItemStack.EMPTY);

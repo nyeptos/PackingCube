@@ -1,8 +1,9 @@
 package github.nyeptos.packingcube.gametest.compat;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.menu.BagMenu;
+import github.nyeptos.packingcube.network.EquipmentTargetCodec;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.gametest.framework.GameTest;
@@ -15,7 +16,7 @@ import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class BagEquipmentGameTests {
     private static BagMenu open(Player player, boolean backpack) {
@@ -126,6 +127,8 @@ public final class BagEquipmentGameTests {
         try {
             buffer.writeVarInt(0);
             buffer.writeBoolean(false);
+            buffer.writeVarInt(9);
+            buffer.writeBoolean(false);
             buffer.writeBoolean(false);
             var descriptors =
                     java.util.List.of(
@@ -139,7 +142,7 @@ public final class BagEquipmentGameTests {
                                     net.minecraft.resources.ResourceLocation.withDefaultNamespace(
                                             "item/empty_armor_slot_helmet"),
                                     ItemStack.EMPTY));
-            BagMenu.writeCuriosTargets(buffer, descriptors);
+            EquipmentTargetCodec.write(buffer, descriptors);
             var mirror = BagMenu.fromNetwork(81, player.getInventory(), buffer);
             h.assertTrue(
                     buffer.readableBytes() == 0 && mirror.curiosTargets().size() == 2,

@@ -1,13 +1,13 @@
 package github.nyeptos.packingcube.gametest.refill;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.filter.BagFilter;
-import github.nyeptos.packingcube.bag.filter.BagFilterTooltip;
+import github.nyeptos.packingcube.item.BagFilterTooltip;
 import github.nyeptos.packingcube.bag.pickup.BagPickupSettings;
 import github.nyeptos.packingcube.bag.refill.RefillService;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
-import github.nyeptos.packingcube.event.RefillHandler;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
+import github.nyeptos.packingcube.bag.refill.RefillHandler;
 import github.nyeptos.packingcube.gametest.support.LegacyRefillFixture;
 import github.nyeptos.packingcube.gui.layout.BagSettingsLayout;
 import github.nyeptos.packingcube.menu.BagMenu;
@@ -37,7 +37,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.ArrayList;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillControlsGameTests {
     private static Player player(GameTestHelper h) {
@@ -99,11 +99,11 @@ public final class RefillControlsGameTests {
     public static void defaultsAndStrictOptionBounds(GameTestHelper h) {
         var p = pouch();
         h.assertTrue(
-                RefillSettings.slots(p) == 511
-                        && RefillSettings.offhandEnabled(p)
-                        && !RefillSettings.filterEnabled(p)
-                        && RefillSettings.threshold(p) == 0
-                        && RefillSettings.target(p) == RefillSettings.MAX_TARGET,
+                RefillPouchSettings.slots(p) == 511
+                        && RefillPouchSettings.offhandEnabled(p)
+                        && !RefillPouchSettings.filterEnabled(p)
+                        && RefillPouchSettings.threshold(p) == 0
+                        && RefillPouchSettings.target(p) == RefillPouchSettings.MAX_TARGET,
                 "Defaults: all hand slots, empty trigger, full stack, filter OFF");
         var original = p.copy();
         for (String[] invalid :
@@ -118,7 +118,7 @@ public final class RefillControlsGameTests {
                     {"container", "true"},
                     {"target", "999999999999"}
                 })
-            h.assertTrue(!RefillSettings.set(p, invalid[0], invalid[1]), "Invalid option rejected");
+            h.assertTrue(!RefillPouchSettings.set(p, invalid[0], invalid[1]), "Invalid option rejected");
         h.assertTrue(ItemStack.matches(original, p), "Rejected writes do not mutate data");
         h.succeed();
     }
@@ -130,7 +130,7 @@ public final class RefillControlsGameTests {
         var pouch = pouch();
         BagFilter.setExcluding(pouch, false);
         rule(pouch, "items", "minecraft:stone");
-        RefillSettings.set(pouch, "filter", "true");
+        RefillPouchSettings.set(pouch, "filter", "true");
         h.assertTrue(
                 contents(pouch).canPlaceItem(0, new ItemStack(Items.DIRT)),
                 "Insertion ignores output filter");
@@ -171,24 +171,24 @@ public final class RefillControlsGameTests {
         var pouch = pouch(new ItemStack(Items.STONE, 8), new ItemStack(Items.DIRT, 8));
         rule(pouch, "items", "minecraft:stone");
         BagFilter.setExcluding(pouch, false);
-        RefillSettings.set(pouch, "filter", "true");
+        RefillPouchSettings.set(pouch, "filter", "true");
         h.assertTrue(
-                RefillSettings.allows(pouch, new ItemStack(Items.STONE))
-                        && !RefillSettings.allows(pouch, new ItemStack(Items.DIRT)),
+                RefillPouchSettings.allows(pouch, new ItemStack(Items.STONE))
+                        && !RefillPouchSettings.allows(pouch, new ItemStack(Items.DIRT)),
                 "Include permits only listed supplies");
         BagFilter.setExcluding(pouch, true);
         h.assertTrue(
-                !RefillSettings.allows(pouch, new ItemStack(Items.STONE))
-                        && RefillSettings.allows(pouch, new ItemStack(Items.DIRT)),
+                !RefillPouchSettings.allows(pouch, new ItemStack(Items.STONE))
+                        && RefillPouchSettings.allows(pouch, new ItemStack(Items.DIRT)),
                 "Exclude inverts output matching");
-        RefillSettings.set(pouch, "filter", "false");
+        RefillPouchSettings.set(pouch, "filter", "false");
         h.assertTrue(
-                RefillSettings.allows(pouch, new ItemStack(Items.STONE))
+                RefillPouchSettings.allows(pouch, new ItemStack(Items.STONE))
                         && BagFilter.entries(pouch, "items").size() == 1,
                 "Disabling filter retains rules");
-        RefillSettings.set(pouch, "filter", "true");
+        RefillPouchSettings.set(pouch, "filter", "true");
         h.assertTrue(
-                !RefillSettings.allows(pouch, new ItemStack(Items.STONE)),
+                !RefillPouchSettings.allows(pouch, new ItemStack(Items.STONE)),
                 "Reenabling restores exclusion");
         h.succeed();
     }
@@ -197,18 +197,18 @@ public final class RefillControlsGameTests {
     public static void tagAndEmptyOutputRules(GameTestHelper h) {
         var pouch = pouch();
         BagFilter.setExcluding(pouch, false);
-        RefillSettings.set(pouch, "filter", "true");
+        RefillPouchSettings.set(pouch, "filter", "true");
         h.assertTrue(
-                !RefillSettings.allows(pouch, new ItemStack(Items.OAK_LOG)),
+                !RefillPouchSettings.allows(pouch, new ItemStack(Items.OAK_LOG)),
                 "Enabled empty include supplies nothing");
         rule(pouch, "tags", "minecraft:logs");
         h.assertTrue(
-                RefillSettings.allows(pouch, new ItemStack(Items.OAK_LOG))
-                        && !RefillSettings.allows(pouch, new ItemStack(Items.STONE)),
+                RefillPouchSettings.allows(pouch, new ItemStack(Items.OAK_LOG))
+                        && !RefillPouchSettings.allows(pouch, new ItemStack(Items.STONE)),
                 "Vanilla tags match supply contents");
         BagFilter.setExcluding(pouch, true);
         h.assertTrue(
-                !RefillSettings.allows(pouch, new ItemStack(Items.OAK_LOG)),
+                !RefillPouchSettings.allows(pouch, new ItemStack(Items.OAK_LOG)),
                 "Tag exclusion also enforced");
         h.succeed();
     }
@@ -217,7 +217,7 @@ public final class RefillControlsGameTests {
     public static void hotbarMaskDoesNotRetargetAnotherSlot(GameTestHelper h) {
         var p = player(h);
         var pouch = pouch(new ItemStack(Items.STONE, 20));
-        RefillSettings.set(pouch, "slots", "2");
+        RefillPouchSettings.set(pouch, "slots", "2");
         var root = install(p, pouch);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STONE));
         use(p, InteractionHand.MAIN_HAND, 0);
@@ -237,8 +237,8 @@ public final class RefillControlsGameTests {
     public static void offhandWorksWhileHotbarDisabledAndCanBeDisabled(GameTestHelper h) {
         var p = player(h);
         var pouch = pouch(new ItemStack(Items.TORCH, 10));
-        RefillSettings.setEnabled(pouch, false, false);
-        RefillSettings.set(pouch, "target", "4");
+        RefillPouchSettings.setEnabled(pouch, false, false);
+        RefillPouchSettings.set(pouch, "target", "4");
         var root = install(p, pouch);
         p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH));
         use(p, InteractionHand.OFF_HAND, 0);
@@ -246,7 +246,7 @@ public final class RefillControlsGameTests {
                 p.getOffhandItem().getCount() == 4 && count(root, 0, 0) == 6,
                 "Offhand independent of hotbar switch");
         var parent = modules(root);
-        RefillSettings.set(parent.getItem(0), "offhand", "false");
+        RefillPouchSettings.set(parent.getItem(0), "offhand", "false");
         parent.setChanged();
         p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH));
         use(p, InteractionHand.OFF_HAND, 0);
@@ -259,7 +259,7 @@ public final class RefillControlsGameTests {
     public static void thresholdAndTargetAreIndependent(GameTestHelper h) {
         var p = player(h);
         var pouch = pouch(new ItemStack(Items.STONE, 40));
-        RefillSettings.set(pouch, "target", "16");
+        RefillPouchSettings.set(pouch, "target", "16");
         var root = install(p, pouch);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STONE, 5));
         use(p, InteractionHand.MAIN_HAND, 4);
@@ -267,7 +267,7 @@ public final class RefillControlsGameTests {
                 p.getMainHandItem().getCount() == 4 && count(root, 0, 0) == 40,
                 "Empty mode waits for exhaustion");
         var parent = modules(root);
-        RefillSettings.set(parent.getItem(0), "threshold", "2");
+        RefillPouchSettings.set(parent.getItem(0), "threshold", "2");
         parent.setChanged();
         use(p, InteractionHand.MAIN_HAND, 3);
         h.assertTrue(p.getMainHandItem().getCount() == 3, "Above threshold untouched");
@@ -276,7 +276,7 @@ public final class RefillControlsGameTests {
                 p.getMainHandItem().getCount() == 16 && count(root, 0, 0) == 26,
                 "Threshold supplies up to chosen target");
         parent = modules(root);
-        RefillSettings.set(parent.getItem(0), "threshold", "15");
+        RefillPouchSettings.set(parent.getItem(0), "threshold", "15");
         parent.setChanged();
         use(p, InteractionHand.MAIN_HAND, 15);
         h.assertTrue(
@@ -311,9 +311,9 @@ public final class RefillControlsGameTests {
         var p = player(h);
         var high = pouch(new ItemStack(Items.STONE, 2));
         BagPickupSettings.setPriority(high, 9);
-        RefillSettings.set(high, "target", "8");
+        RefillPouchSettings.set(high, "target", "8");
         var low = pouch(new ItemStack(Items.STONE, 30));
-        RefillSettings.set(low, "target", "32");
+        RefillPouchSettings.set(low, "target", "32");
         var root = install(p, high, low);
         p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
         h.assertTrue(
@@ -324,7 +324,7 @@ public final class RefillControlsGameTests {
                         + " target");
         high = pouch(new ItemStack(Items.STONE, 8));
         BagPickupSettings.setPriority(high, 9);
-        RefillSettings.set(high, "filter", "true");
+        RefillPouchSettings.set(high, "filter", "true");
         rule(high, "items", "minecraft:stone");
         root = install(p, high, low);
         p.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
@@ -339,7 +339,7 @@ public final class RefillControlsGameTests {
     public static void tradeUsesOutputFilterAndDoesNotPartiallyWithdraw(GameTestHelper h) {
         var p = player(h);
         var pouch = pouch(new ItemStack(Items.EMERALD, 10));
-        RefillSettings.set(pouch, "filter", "true");
+        RefillPouchSettings.set(pouch, "filter", "true");
         rule(pouch, "items", "minecraft:emerald");
         var root = install(p, pouch);
         var menu = trade(p);
@@ -349,7 +349,7 @@ public final class RefillControlsGameTests {
                         && menu.getSlot(0).getItem().isEmpty(),
                 "Excluded payment not supplied");
         var parent = modules(root);
-        RefillSettings.set(parent.getItem(0), "filter", "false");
+        RefillPouchSettings.set(parent.getItem(0), "filter", "false");
         parent.setChanged();
         h.assertTrue(
                 RefillService.trade(p) == 3
@@ -374,7 +374,7 @@ public final class RefillControlsGameTests {
                 p.getOffhandItem().is(Items.TOTEM_OF_UNDYING) && count(root, 0, 0) == 0,
                 "Real registered totem event restores offhand after consumption");
         var excluded = pouch(new ItemStack(Items.TOTEM_OF_UNDYING));
-        RefillSettings.set(excluded, "filter", "true");
+        RefillPouchSettings.set(excluded, "filter", "true");
         rule(excluded, "items", "minecraft:totem_of_undying");
         root = install(p, excluded);
         p.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
@@ -438,16 +438,16 @@ public final class RefillControlsGameTests {
                 "Untrusted malformed writes rejected");
         var snapshot = menu.filterSnapshot();
         h.assertTrue(
-                RefillSettings.slots(snapshot) == 5
-                        && !RefillSettings.offhandEnabled(snapshot)
-                        && RefillSettings.target(snapshot) == 16,
+                RefillPouchSettings.slots(snapshot) == 5
+                        && !RefillPouchSettings.offhandEnabled(snapshot)
+                        && RefillPouchSettings.target(snapshot) == 16,
                 "Synchronized snapshot contains item settings");
         var radial = new BagRadialMenu(11, p.getInventory(), root);
         var icon = radial.icon(0);
         h.assertTrue(
-                RefillSettings.slots(icon) == 5
-                        && !RefillSettings.offhandEnabled(icon)
-                        && RefillSettings.filterEnabled(icon)
+                RefillPouchSettings.slots(icon) == 5
+                        && !RefillPouchSettings.offhandEnabled(icon)
+                        && RefillPouchSettings.filterEnabled(icon)
                         && icon.get(DataComponents.CONTAINER) == null,
                 "Radial sanitized copy retains configuration, not contents");
         var normal = ModItems.STORAGE_POUCH.get().getDefaultInstance();
@@ -461,7 +461,7 @@ public final class RefillControlsGameTests {
 
     @GameTest(template = "empty")
     public static void screenLayoutAndOutputTooltipsRemainBounded(GameTestHelper h) {
-        var layout = BagSettingsLayout.floating(124, 80, RefillSettings.SETTINGS_ROWS);
+        var layout = BagSettingsLayout.floating(124, 80, RefillPouchSettings.SETTINGS_ROWS);
         h.assertTrue(
                 layout.optionRow(9).bottom() < layout.modeY()
                         && layout.contentBottom() > layout.viewport().bottom(),
@@ -475,7 +475,7 @@ public final class RefillControlsGameTests {
                                 net.minecraft.network.chat.contents.TranslatableContents text
                         && text.getKey().equals("gui.packingcube.refill_filter_off"),
                 "Disabled output filter clearly labeled");
-        RefillSettings.set(p, "filter", "true");
+        RefillPouchSettings.set(p, "filter", "true");
         BagFilterTooltip.append(p, new ArrayList<>());
         var regular = ModItems.STORAGE_POUCH.get().getDefaultInstance();
         h.assertTrue(
@@ -488,7 +488,7 @@ public final class RefillControlsGameTests {
     public static void bothHandsInOneTickHaveIndependentSnapshots(GameTestHelper h) {
         var p = player(h);
         var supply = pouch(new ItemStack(Items.TORCH, 10));
-        RefillSettings.set(supply, "target", "2");
+        RefillPouchSettings.set(supply, "target", "2");
         var root = install(p, supply);
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.TORCH));
         p.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH));
@@ -511,7 +511,7 @@ public final class RefillControlsGameTests {
     public static void tradePreflightIncludesBothOutputFilters(GameTestHelper h) {
         var p = player(h);
         var supply = pouch(new ItemStack(Items.EMERALD, 10), new ItemStack(Items.PAPER, 10));
-        RefillSettings.set(supply, "filter", "true");
+        RefillPouchSettings.set(supply, "filter", "true");
         rule(supply, "items", "minecraft:paper");
         var root = install(p, supply);
         var trader = new ClientSideMerchant(p);

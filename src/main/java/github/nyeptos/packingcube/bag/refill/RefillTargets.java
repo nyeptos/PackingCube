@@ -44,8 +44,8 @@ public final class RefillTargets {
         // Retain old pouch settings. Newly supported inventory, armor and Curios start unselected.
         if (!id.startsWith("inventory:")) return false;
         int slot = Integer.parseInt(id.substring(10));
-        if (slot == RefillSettings.OFFHAND_SLOT) return RefillSettings.offhandEnabled(pouch);
-        return slot < 9 && (RefillSettings.slots(pouch) & (1 << slot)) != 0;
+        if (slot == RefillPouchSettings.OFFHAND_SLOT) return RefillPouchSettings.offhandEnabled(pouch);
+        return slot < 9 && (RefillPouchSettings.slots(pouch) & (1 << slot)) != 0;
     }
 
     public static boolean set(ItemStack pouch, String id, boolean selected) {
@@ -57,15 +57,15 @@ public final class RefillTargets {
         if (id.startsWith("inventory:")) {
             int slot = Integer.parseInt(id.substring(10));
             if (slot < 9)
-                RefillSettings.set(
+                RefillPouchSettings.set(
                         pouch,
                         "slots",
                         Integer.toString(
                                 selected
-                                        ? RefillSettings.slots(pouch) | (1 << slot)
-                                        : RefillSettings.slots(pouch) & ~(1 << slot)));
-            if (slot == RefillSettings.OFFHAND_SLOT)
-                RefillSettings.set(pouch, "offhand", Boolean.toString(selected));
+                                        ? RefillPouchSettings.slots(pouch) | (1 << slot)
+                                        : RefillPouchSettings.slots(pouch) & ~(1 << slot)));
+            if (slot == RefillPouchSettings.OFFHAND_SLOT)
+                RefillPouchSettings.set(pouch, "offhand", Boolean.toString(selected));
             data = pouch.getOrDefault(DataComponents.CUSTOM_DATA, CustomData.EMPTY).copyTag();
         }
         map.putBoolean(id, selected);

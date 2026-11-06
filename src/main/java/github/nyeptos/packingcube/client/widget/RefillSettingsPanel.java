@@ -1,7 +1,7 @@
 package github.nyeptos.packingcube.client.widget;
 
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.gui.input.RefillSettingsView;
 import github.nyeptos.packingcube.gui.layout.BagSettingsLayout;
 
@@ -85,7 +85,7 @@ public final class RefillSettingsPanel {
         access.set(key, value.toString());
     }
 
-    private RefillSlotSettings.Rule rule() {
+    private RefillSlotDestinations.Rule rule() {
         return view.rule(settings());
     }
 
@@ -177,6 +177,14 @@ public final class RefillSettingsPanel {
         live.clear();
         sliders.clear();
         shape = view.shape(settings());
+        buildSourceButtons();
+        buildTabs();
+        buildPage();
+        tick();
+    }
+
+    /** Row 0: the nine refill sources. Choosing one reloads the panel for that source. */
+    private void buildSourceButtons() {
         for (int i = 0; i < 9; i++) {
             int source = i;
             int x = layout.content().width() * i / 9, next = layout.content().width() * (i + 1) / 9;
@@ -192,6 +200,10 @@ public final class RefillSettingsPanel {
                     () -> view.source() == source,
                     () -> true);
         }
+    }
+
+    /** Row 1: the three pages. Tabs are navigation, so re-selecting one keeps the settings. */
+    private void buildTabs() {
         for (int i = 0; i < 3; i++) {
             final int page = i;
             int x = layout.content().width() * i / 3, next = layout.content().width() * (i + 1) / 3;
@@ -205,35 +217,41 @@ public final class RefillSettingsPanel {
                     },
                     () -> view.page() == page);
         }
+    }
+
+    /** Rows 2 and below: the widgets of the open page. */
+    private void buildPage() {
         switch (view.page()) {
             case RefillSettingsView.DESTINATIONS -> buildDestinations();
             case RefillSettingsView.METHOD -> buildMethod();
-            case RefillSettingsView.FILTER -> {
-                full(
-                        2,
-                        () ->
-                                text(
-                                        "refill_filter_"
-                                                + (RefillSettings.filterEnabled(settings())
-                                                        ? "on"
-                                                        : "off")),
-                        () -> set("filter", !RefillSettings.filterEnabled(settings())),
-                        () -> RefillSettings.filterEnabled(settings()));
-                full(
-                        3,
-                        () ->
-                                text(
-                                        "refill_trade_"
-                                                + (RefillSettings.enabled(settings(), true)
-                                                        ? "on"
-                                                        : "off")),
-                        () -> set("trade", !RefillSettings.enabled(settings(), true)),
-                        () -> RefillSettings.enabled(settings(), true));
-                full(4, () -> text("refill_pause_start"), access::togglePause, null);
-            }
+            case RefillSettingsView.FILTER -> buildFilterPage();
             default -> throw new IllegalStateException();
         }
-        tick();
+    }
+
+    /** The pouch-wide filter, the trade switch and the pause button. */
+    private void buildFilterPage() {
+        full(
+                2,
+                () ->
+                        text(
+                                "refill_filter_"
+                                        + (RefillPouchSettings.filterEnabled(settings())
+                                                ? "on"
+                                                : "off")),
+                () -> set("filter", !RefillPouchSettings.filterEnabled(settings())),
+                () -> RefillPouchSettings.filterEnabled(settings()));
+        full(
+                3,
+                () ->
+                        text(
+                                "refill_trade_"
+                                        + (RefillPouchSettings.enabled(settings(), true)
+                                                ? "on"
+                                                : "off")),
+                () -> set("trade", !RefillPouchSettings.enabled(settings(), true)),
+                () -> RefillPouchSettings.enabled(settings(), true));
+        full(4, () -> text("refill_pause_start"), access::togglePause, null);
     }
 
     private void fullTab(
@@ -281,7 +299,7 @@ public final class RefillSettingsPanel {
         return view.priorityRow(settings());
     }
 
-    private Component durabilityLabel(RefillSlotSettings.Rule rule) {
+    private Component durabilityLabel(RefillSlotDestinations.Rule rule) {
         int value = sliderValue(5, rule.durability());
         return switch (rule.durabilityMode()) {
             case "percent" -> format("refill_durability_percent", value);
@@ -334,7 +352,7 @@ public final class RefillSettingsPanel {
     /** Real stack limit of the refilled item, so the slider never offers more than one stack. */
     private int stackLimit() {
         int limit = access.destinationLimit(rule().destination());
-        return limit > 0 ? limit : RefillSettings.MAX_TARGET;
+        return limit > 0 ? limit : RefillPouchSettings.MAX_TARGET;
     }
 
     private int effectiveTarget() {

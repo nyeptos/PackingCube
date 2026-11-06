@@ -41,9 +41,9 @@ public final class RefillSupply {
                         && pouch.getCount() == 1
                         && (targetSlot == -2
                                 || (targetSlot == -1
-                                        ? RefillSettings.enabled(pouch, true)
-                                        : !RefillSlotSettings.mapped(pouch)
-                                                && RefillSettings.suppliesSlot(pouch, targetSlot))))
+                                        ? RefillPouchSettings.enabled(pouch, true)
+                                        : !RefillSlotDestinations.mapped(pouch)
+                                                && RefillPouchSettings.suppliesSlot(pouch, targetSlot))))
                     result.add(new BagInventory(pouch, false, parent));
             }
         }
@@ -58,10 +58,10 @@ public final class RefillSupply {
     public static int available(List<BagInventory> supplies, ItemStack template) {
         int total = 0;
         for (var pouch : supplies)
-            if (RefillSettings.allows(pouch.bagStack(), template))
+            if (RefillPouchSettings.allows(pouch.bagStack(), template))
                 for (int slot : sourceOrder(pouch)) {
-                    if (RefillSlotSettings.mapped(pouch.bagStack())
-                            && !RefillSlotSettings.get(pouch.bagStack(), slot).enabled()) continue;
+                    if (RefillSlotDestinations.mapped(pouch.bagStack())
+                            && !RefillSlotDestinations.get(pouch.bagStack(), slot).enabled()) continue;
                     var stack = pouch.getItem(slot);
                     if (ItemStack.isSameItemSameComponents(stack, template))
                         total += stack.getCount();
@@ -76,11 +76,11 @@ public final class RefillSupply {
             List<BagInventory> supplies, ItemStack template, int amount, List<Withdrawal> plan) {
         int remaining = amount;
         for (var pouch : supplies)
-            if (RefillSettings.allows(pouch.bagStack(), template))
+            if (RefillPouchSettings.allows(pouch.bagStack(), template))
                 for (int slot : sourceOrder(pouch)) {
                     if (remaining <= 0) break;
-                    if (RefillSlotSettings.mapped(pouch.bagStack())
-                            && !RefillSlotSettings.get(pouch.bagStack(), slot).enabled()) continue;
+                    if (RefillSlotDestinations.mapped(pouch.bagStack())
+                            && !RefillSlotDestinations.get(pouch.bagStack(), slot).enabled()) continue;
                     var stack = pouch.getItem(slot);
                     if (!ItemStack.isSameItemSameComponents(stack, template)) continue;
                     int reserved = 0;
@@ -99,11 +99,11 @@ public final class RefillSupply {
     private static List<Integer> sourceOrder(BagInventory pouch) {
         var slots = new ArrayList<Integer>();
         for (int i = 0; i < pouch.getContainerSize(); i++) slots.add(i);
-        if (RefillSlotSettings.mapped(pouch.bagStack()))
+        if (RefillSlotDestinations.mapped(pouch.bagStack()))
             slots.sort(
                     Comparator.comparingInt(
                                     (Integer i) ->
-                                            RefillSlotSettings.get(pouch.bagStack(), i).priority())
+                                            RefillSlotDestinations.get(pouch.bagStack(), i).priority())
                             .reversed());
         return slots;
     }

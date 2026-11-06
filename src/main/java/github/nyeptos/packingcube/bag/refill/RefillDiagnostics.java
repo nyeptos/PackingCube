@@ -1,7 +1,5 @@
 package github.nyeptos.packingcube.bag.refill;
 
-import github.nyeptos.packingcube.bag.BagInventory;
-
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
@@ -17,7 +15,7 @@ public final class RefillDiagnostics {
         var supplies = RefillSupply.collect(player, slot);
         if (supplies.isEmpty()) {
             if (RefillSupply.collect(player, -2).stream()
-                    .anyMatch(p -> RefillSlotSettings.mapped(p.bagStack()))) return "mapped";
+                    .anyMatch(p -> RefillSlotDestinations.mapped(p.bagStack()))) return "mapped";
             return "pouch";
         }
         var held = player.getInventory().getItem(slot);
@@ -33,16 +31,11 @@ public final class RefillDiagnostics {
     }
 
     /** One line per configured rule: what it supplies, what it targets and what the limit says. */
-    public static String rule(Player player, BagInventory pouch, int source) {
-        var rule = RefillSlotSettings.get(pouch.bagStack(), source);
-        var supply = pouch.getItem(source);
+    public static String rule(Player player, ItemStack supply, RefillSlotDestinations.Rule rule) {
         var text = new StringBuilder(rule.enabled() ? "+" : "-");
-        text.append(" #").append(source + 1).append(' ').append(rule.destination());
+        text.append(' ').append(rule.destination());
         text.append(" replace=").append(rule.replace() ? "on" : "off");
         text.append(" wear=").append(rule.durabilityMode()).append('/').append(rule.durability());
-        // A returned item keeps its slot out of supply, which looks like a silent rule.
-        boolean locked = RefillSettings.locked(pouch.bagStack(), source);
-        text.append(" lock=").append(locked ? "on" : "off");
         text.append(" supply=").append(describe(supply));
         var destination =
                 rule.destination().isEmpty()
@@ -51,16 +44,15 @@ public final class RefillDiagnostics {
         if (destination == null) return text.append(" -> no-destination").toString();
         var old = destination.read();
         text.append(" dest=").append(describe(old));
-        if (locked) return text.append(" -> locked").toString();
+        // An empty source cannot supply anything, so it must never read as a swap.
+        if (supply.isEmpty()) return text.append(" -> no-supply").toString();
         if (old.isEmpty()) return text.append(" -> fill").toString();
+        if (ItemStack.isSameItemSameComponents(supply, old))
+            return text.append(" -> same").toString();
         if (!rule.replace()) return text.append(" -> keep").toString();
-        // The limit is measured on the item in place, so it is always worth printing.
         text.append(" left=").append(remaining(old, rule));
-        boolean swap = RefillDispatcher.spentEnough(old, rule);
-        text.append(swap ? " -> swap" : " -> wait");
-        if (supply.isEmpty()) text.append(" (source empty)");
-        else if (ItemStack.isSameItemSameComponents(supply, old)) text.append(" (identical)");
-        return text.toString();
+        return text.append(RefillDispatcher.wornEnough(supply, old, rule) ? " -> swap" : " -> wait")
+                .toString();
     }
 
     private static String describe(ItemStack stack) {
@@ -71,7 +63,7 @@ public final class RefillDiagnostics {
                 : id + "x" + stack.getCount();
     }
 
-    private static String remaining(ItemStack old, RefillSlotSettings.Rule rule) {
+    private static String remaining(ItemStack old, RefillSlotDestinations.Rule rule) {
         int max = old.getMaxDamage();
         if (!old.isDamageableItem() || max <= 0) return "none";
         int left = max - old.getDamageValue();

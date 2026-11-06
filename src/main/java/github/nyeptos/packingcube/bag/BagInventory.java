@@ -2,7 +2,7 @@ package github.nyeptos.packingcube.bag;
 
 import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.bag.station.StationBlocks;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.core.component.DataComponents;
@@ -20,14 +20,16 @@ public final class BagInventory extends SimpleContainer {
     private ItemStack bag;
     private BagInventory parent;
     private final boolean modules;
+    private final boolean bulk;
     private final Runnable onSave;
     private boolean ready;
     private final List<ItemStack> legacyOverflow = new ArrayList<>();
 
     public BagInventory(ItemStack bag, boolean modules, Runnable onSave) {
-        super(modules ? MODULE_SLOTS : FILTER_SLOTS);
+        super(sizeOf(bag, modules));
         this.bag = bag;
         this.modules = modules;
+        this.bulk = bag.is(ModItems.BULK_POUCH.get());
         this.onSave = onSave;
         ItemContainerContents contents =
                 bag.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
@@ -35,10 +37,38 @@ public final class BagInventory extends SimpleContainer {
         for (int i = 0; i < Math.min(saved.size(), getContainerSize()); i++) {
             super.setItem(i, saved.get(i).copy());
         }
+        if (bulk) {
+            // The slot keeps a one-item template; the real amount rides in the pouch's own data.
+            int count = BulkStore.count(bag);
+            if (count <= 0 || getItem(0).isEmpty()) super.setItem(0, ItemStack.EMPTY);
+            else getItem(0).setCount(count);
+        }
         // Retain slots from the old 27-slot version until the player can recover them.
         for (int i = getContainerSize(); i < saved.size(); i++)
             legacyOverflow.add(saved.get(i).copy());
         ready = true;
+    }
+
+    private static int sizeOf(ItemStack bag, boolean modules) {
+        if (bag.is(ModItems.BULK_POUCH.get())) return 1;
+        return modules ? MODULE_SLOTS : FILTER_SLOTS;
+    }
+
+    private BagInventory(int size, boolean bulk) {
+        super(size);
+        this.bag = ItemStack.EMPTY;
+        this.modules = false;
+        this.bulk = bulk;
+        this.onSave = () -> {};
+    }
+
+    /** Client mirror of the slots the server opened. Never writes anything back. */
+    public static BagInventory mirror(int size, boolean bulk) {
+        return new BagInventory(size, bulk);
+    }
+
+    public boolean bulk() {
+        return bulk;
     }
 
     public BagInventory(ItemStack bag, boolean modules, BagInventory parent) {
@@ -58,15 +88,19 @@ public final class BagInventory extends SimpleContainer {
 
     @Override
     public boolean canPlaceItem(int slot, ItemStack stack) {
-        return accepts(modules, stack)
-                && (modules
-                        || bag.is(ModItems.REFILL_POUCH.get())
-                        || BagFilter.matches(bag, stack));
+        if (!accepts(modules, stack)) return false;
+        if (modules || bag.is(ModItems.REFILL_POUCH.get())) return true;
+        if (bulk) {
+            // One kind, no filter: whatever sits in the slot decides what else may come in.
+            ItemStack held = getItem(slot);
+            return held.isEmpty() || ItemStack.isSameItemSameComponents(held, stack);
+        }
+        if (!BagFilter.matches(bag, stack)) return false;
+        return true;
     }
 
     /** Shared by the server inventory and both client/server menu slots. */
     public static boolean accepts(boolean modules, ItemStack stack) {
-        // A module slot holds a pouch or one crafting block that opens its GUI from the radial.
         if (modules) return isPouch(stack) || StationBlocks.fitsModule(stack);
         // No bags, shulker boxes, bundles or other non-nestable containers.
         return !isBag(stack) && stack.getItem().canFitInsideContainerItems();
@@ -77,7 +111,9 @@ public final class BagInventory extends SimpleContainer {
     }
 
     public static boolean isPouch(ItemStack stack) {
-        return stack.is(ModItems.STORAGE_POUCH.get()) || stack.is(ModItems.REFILL_POUCH.get());
+        return stack.is(ModItems.STORAGE_POUCH.get())
+                || stack.is(ModItems.BULK_POUCH.get())
+                || stack.is(ModItems.REFILL_POUCH.get());
     }
 
     public static boolean isBag(ItemStack stack) {
@@ -90,7 +126,14 @@ public final class BagInventory extends SimpleContainer {
      */
     @Override
     public void setItem(int slot, ItemStack stack) {
+        // A plain container caps every stack at the item's own limit, so a bulk amount is put
+        // back after the write.
+        int wanted = bulk ? Math.min(stack.getCount(), BulkStore.LIMIT) : stack.getCount();
         super.setItem(slot, stack);
+        if (wanted > getItem(slot).getCount()) {
+            getItem(slot).setCount(wanted);
+            setChanged();
+        }
         clearLockWhenEmpty(slot);
     }
 
@@ -103,13 +146,23 @@ public final class BagInventory extends SimpleContainer {
 
     private void clearLockWhenEmpty(int slot) {
         if (modules || !getItem(slot).isEmpty()) return;
-        if (RefillSettings.locked(bag, slot)) RefillSettings.setLocked(bag, slot, false);
+        if (RefillPouchSettings.locked(bag, slot)) RefillPouchSettings.setLocked(bag, slot, false);
     }
 
     @Override
     public void setChanged() {
         super.setChanged();
         if (!ready) return;
+        if (bulk) {
+            ItemStack held = getItem(0);
+            ItemStack template = held.isEmpty() ? ItemStack.EMPTY : held.copyWithCount(1);
+            bag.set(
+                    DataComponents.CONTAINER,
+                    ItemContainerContents.fromItems(List.of(template)));
+            BulkStore.setCount(bag, held.getCount());
+            onSave.run();
+            return;
+        }
         List<ItemStack> stacks = new ArrayList<>(getContainerSize());
         for (int i = 0; i < getContainerSize(); i++) stacks.add(getItem(i).copy());
         for (ItemStack extra : legacyOverflow) stacks.add(extra.copy());
@@ -194,21 +247,22 @@ public final class BagInventory extends SimpleContainer {
                 if (pass == 0
                         && !existing.isEmpty()
                         && ItemStack.isSameItemSameComponents(existing, remainder)) {
-                    int moved =
-                            Math.min(
-                                    remainder.getCount(),
-                                    Math.min(getMaxStackSize(), existing.getMaxStackSize())
-                                            - existing.getCount());
+                    int capacity =
+                            bulk
+                                    ? BulkStore.LIMIT
+                                    : Math.min(getMaxStackSize(), existing.getMaxStackSize());
+                    int moved = Math.min(remainder.getCount(), capacity - existing.getCount());
                     if (moved > 0) {
                         existing.grow(moved);
                         remainder.shrink(moved);
                         setChanged();
                     }
                 } else if (pass == 1 && existing.isEmpty()) {
-                    int moved =
-                            Math.min(
-                                    remainder.getCount(),
-                                    Math.min(getMaxStackSize(), remainder.getMaxStackSize()));
+                    int capacity =
+                            bulk
+                                    ? BulkStore.LIMIT
+                                    : Math.min(getMaxStackSize(), remainder.getMaxStackSize());
+                    int moved = Math.min(remainder.getCount(), capacity);
                     setItem(i, remainder.copyWithCount(moved));
                     remainder.shrink(moved);
                 }

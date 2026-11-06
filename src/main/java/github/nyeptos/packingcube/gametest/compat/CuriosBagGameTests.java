@@ -8,7 +8,7 @@ import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.bag.pickup.BagPickupSettings;
 import github.nyeptos.packingcube.bag.pickup.BagRouter;
 import github.nyeptos.packingcube.compat.BagEquipment;
-import github.nyeptos.packingcube.event.BagPickupHandler;
+import github.nyeptos.packingcube.bag.pickup.BagPickupHandler;
 import github.nyeptos.packingcube.gametest.refill.RefillOpeningGameTests;
 import github.nyeptos.packingcube.gametest.support.LegacyRefillFixture;
 import github.nyeptos.packingcube.menu.BagMenu;
@@ -535,8 +535,8 @@ public final class CuriosBagGameTests {
     public static void equippedBackpackSuppliesRefillPouchButPouchCannotEquip(GameTestHelper h) {
         var p = player(h);
         var supply = LegacyRefillFixture.pouch();
-        github.nyeptos.packingcube.bag.refill.RefillSettings.set(supply, "target", "3");
-        github.nyeptos.packingcube.bag.refill.RefillSettings.set(supply, "threshold", "2");
+        github.nyeptos.packingcube.bag.refill.RefillPouchSettings.set(supply, "target", "3");
+        github.nyeptos.packingcube.bag.refill.RefillPouchSettings.set(supply, "threshold", "2");
         storage(supply).setItem(0, new ItemStack(Items.STONE, 8));
         var root = bag();
         modules(root).setItem(0, supply);
@@ -595,9 +595,9 @@ public final class CuriosBagGameTests {
         var player = player(h);
         var supply = ModItems.REFILL_POUCH.get().getDefaultInstance();
         new BagInventory(supply, false, () -> {}).setItem(0, new ItemStack(Items.STONE, 12));
-        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(
+        github.nyeptos.packingcube.bag.refill.RefillSlotDestinations.set(
                 supply, 0, "destination", "curios:back:0");
-        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(supply, 0, "target", "3");
+        github.nyeptos.packingcube.bag.refill.RefillSlotDestinations.set(supply, 0, "target", "3");
         var root = bag();
         modules(root).setItem(0, supply);
         player.getInventory().setItem(8, root);
@@ -637,9 +637,9 @@ public final class CuriosBagGameTests {
         var player = player(h);
         var supply = ModItems.REFILL_POUCH.get().getDefaultInstance();
         new BagInventory(supply, false, () -> {}).setItem(0, new ItemStack(Items.STONE, 12));
-        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(
+        github.nyeptos.packingcube.bag.refill.RefillSlotDestinations.set(
                 supply, 0, "destination", "curios:back:0");
-        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(supply, 0, "replace", "true");
+        github.nyeptos.packingcube.bag.refill.RefillSlotDestinations.set(supply, 0, "replace", "true");
         var root = bag();
         modules(root).setItem(0, supply);
         player.getInventory().setItem(8, root);

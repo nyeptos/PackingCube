@@ -83,7 +83,8 @@ public final class BagRouter {
             ItemStack module = modules.getItem(slot);
             // Refill pouches never take routed inserts, neither pickup nor bulk stow. Their nine
             // slots stay under manual control so supplies are not silently filled with loot.
-            if (!module.is(ModItems.STORAGE_POUCH.get())) continue;
+            if (!module.is(ModItems.STORAGE_POUCH.get())
+                    && !module.is(ModItems.BULK_POUCH.get())) continue;
             if (automatic && !BagPickupSettings.enabled(module)) continue;
             if (BagFilter.matches(module, incoming)) {
                 destinations.add(new Destination(module, modules));

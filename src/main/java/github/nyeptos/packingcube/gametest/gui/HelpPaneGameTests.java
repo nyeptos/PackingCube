@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.gametest.gui;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.client.widget.HelpPane;
 
 import net.minecraft.gametest.framework.GameTest;
@@ -9,7 +9,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /** Explanations open beside the settings window and never over its controls. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class HelpPaneGameTests {
     @GameTest(template = "empty")

@@ -2,9 +2,9 @@ package github.nyeptos.packingcube.client;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
-import github.nyeptos.packingcube.Packingcube;
-import github.nyeptos.packingcube.bag.input.BagKeyActions;
-import github.nyeptos.packingcube.bag.input.BagKeyLatch;
+import github.nyeptos.packingcube.PackingCube;
+import github.nyeptos.packingcube.gui.input.BagKeyActions;
+import github.nyeptos.packingcube.gui.input.BagKeyLatch;
 import github.nyeptos.packingcube.network.OpenBigBagPayload;
 import github.nyeptos.packingcube.network.OpenEquippedBagPayload;
 
@@ -19,7 +19,7 @@ import net.neoforged.neoforge.network.PacketDistributor;
 
 import org.lwjgl.glfw.GLFW;
 
-@EventBusSubscriber(modid = Packingcube.MODID, value = Dist.CLIENT)
+@EventBusSubscriber(modid = PackingCube.MODID, value = Dist.CLIENT)
 public final class BagKeyHandler {
     // New IDs intentionally do not reuse the old open_back_bag B assignment in options.txt.
     public static final KeyMapping OPEN_RADIAL =

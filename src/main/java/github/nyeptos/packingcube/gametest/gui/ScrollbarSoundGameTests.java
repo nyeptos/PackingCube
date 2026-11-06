@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.gametest.gui;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.gui.animation.ScrollbarSoundState;
 
 import net.minecraft.gametest.framework.GameTest;
@@ -8,7 +8,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class ScrollbarSoundGameTests {
     @GameTest(template = "empty")

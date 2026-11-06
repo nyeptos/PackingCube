@@ -1,9 +1,9 @@
 package github.nyeptos.packingcube.gametest.refill;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.refill.RefillDispatcher;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.registry.ModItems;
@@ -20,9 +20,8 @@ import net.minecraft.world.level.GameType;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-import java.util.Set;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillScreenGameTests {
     private static BagInventory storage(ItemStack pouch) {
@@ -66,8 +65,8 @@ public final class RefillScreenGameTests {
     public static void ruleRefillKeepsRunningWhileABagScreenIsOpen(GameTestHelper h) {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var source = pouch(new ItemStack(Items.STONE, 12));
-        RefillSlotSettings.set(source, 0, "destination", RefillTargets.inventory(9));
-        RefillSlotSettings.set(source, 0, "target", "4");
+        RefillSlotDestinations.set(source, 0, "destination", RefillTargets.inventory(9));
+        RefillSlotDestinations.set(source, 0, "target", "4");
         var supplyRoot = backpack(source);
         player.getInventory().setItem(8, supplyRoot);
         var openRoot = backpack(ModItems.STORAGE_POUCH.get().getDefaultInstance());
@@ -89,8 +88,8 @@ public final class RefillScreenGameTests {
     public static void carriedStackStillPausesTheOpenScreen(GameTestHelper h) {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var source = pouch(new ItemStack(Items.STONE, 12));
-        RefillSlotSettings.set(source, 0, "destination", RefillTargets.inventory(9));
-        RefillSlotSettings.set(source, 0, "target", "4");
+        RefillSlotDestinations.set(source, 0, "destination", RefillTargets.inventory(9));
+        RefillSlotDestinations.set(source, 0, "target", "4");
         var supplyRoot = backpack(source);
         player.getInventory().setItem(8, supplyRoot);
         var openRoot = backpack(ModItems.STORAGE_POUCH.get().getDefaultInstance());
@@ -109,8 +108,8 @@ public final class RefillScreenGameTests {
     public static void otherContainersStillPauseRefill(GameTestHelper h) {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         var source = pouch(new ItemStack(Items.STONE, 12));
-        RefillSlotSettings.set(source, 0, "destination", RefillTargets.inventory(9));
-        RefillSlotSettings.set(source, 0, "target", "4");
+        RefillSlotDestinations.set(source, 0, "destination", RefillTargets.inventory(9));
+        RefillSlotDestinations.set(source, 0, "target", "4");
         var supplyRoot = backpack(source);
         player.getInventory().setItem(8, supplyRoot);
         player.containerMenu =

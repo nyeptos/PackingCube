@@ -1,9 +1,9 @@
 package github.nyeptos.packingcube.gametest.refill;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.refill.RefillDispatcher;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.registry.ModItems;
 
@@ -17,7 +17,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /** One switch decides whether an occupied destination may be replaced at all. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillReplaceGameTests {
     private static BagInventory storage(ItemStack pouch) {
@@ -49,9 +49,9 @@ public final class RefillReplaceGameTests {
     }
 
     private static void assign(ItemStack pouch, int destination, boolean replace) {
-        RefillSlotSettings.set(pouch, 0, "destination", RefillTargets.inventory(destination));
-        RefillSlotSettings.set(pouch, 0, "target", "1");
-        RefillSlotSettings.set(pouch, 0, "replace", Boolean.toString(replace));
+        RefillSlotDestinations.set(pouch, 0, "destination", RefillTargets.inventory(destination));
+        RefillSlotDestinations.set(pouch, 0, "target", "1");
+        RefillSlotDestinations.set(pouch, 0, "replace", Boolean.toString(replace));
     }
 
     @GameTest(template = "empty")

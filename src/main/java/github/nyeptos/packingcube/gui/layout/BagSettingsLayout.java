@@ -39,9 +39,15 @@ public record BagSettingsLayout(int width, int height, int inventoryHeight, int 
             throw new IllegalArgumentException("Unsupported inventory height or option rows");
     }
 
-    /** The inventory always keeps the ordinary pouch screen's center and size. */
+    /** The inventory always keeps the ordinary pouch screen's width and centers on its height. */
     public static Rect inventoryAnchor(int screenWidth, int screenHeight) {
-        return new Rect((screenWidth - 176) / 2, (screenHeight - 132) / 2, 176, 132);
+        return inventoryAnchor(screenWidth, screenHeight, 132);
+    }
+
+    /** Same anchor for a window that is taller than the ordinary pouch screen. */
+    public static Rect inventoryAnchor(int screenWidth, int screenHeight, int windowHeight) {
+        return new Rect(
+                (screenWidth - 176) / 2, (screenHeight - windowHeight) / 2, 176, windowHeight);
     }
 
     public static boolean fitsBesideInventory(int screenWidth, int inventoryLeft) {

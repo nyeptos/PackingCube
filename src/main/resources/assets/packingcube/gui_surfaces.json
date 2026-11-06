@@ -16,5 +16,11 @@
     "width": 220,
     "height": 220,
     "sha256": "cd32be9e91cb254b6a3c506c7722d8f6f6c6c9ea8d06062a3fad617a21f67523"
+  },
+  {
+    "path": "textures/gui/container/bulk_pouch.png",
+    "width": 176,
+    "height": 140,
+    "sha256": "585f0dc65119fdbfeedb8579d5d2c69e913e8b054333ecdc915f947f413ba4d9"
   }
 ]

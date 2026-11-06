@@ -4,18 +4,19 @@
 
 | 場所 | 責務 |
 |---|---|
-| `Packingcube` | MOD IDと起動時の配線だけ |
+| `PackingCube` | MOD IDと起動時の配線だけ |
 | `registry/ModRegistries` | レジストリ登録の入口。MODライフサイクルバスへ接続 |
 | `event/ModGameEvents` | ゲームバスへのイベント登録。既存の順序・優先度を維持 |
 | `registry/ModItems` | バッグなどのアイテム登録 |
 | `registry/ModMenus` | 管理画面・ラジアルのMenuType登録 |
 | `registry/ModCreativeTabs` | クリエイティブタブ登録 |
-| `data` | アイテムモデルとレシピのdatagen |
-| `bag` | 収納、フィルター、バッグ識別、振り分け、入力・座標の共通判定 |
+| `datagen` | 言語・モデル・レシピ・タグの生成 |
+| `bag` | 収納、フィルター、バッグ識別、振り分け、補充の供給元。描画は持たない |
+| `gui` | 画面に依存しないUIモデル（レイアウト・入力状態・図形）。クライアント型を参照しない |
 | `menu` | サーバーメニューと同期状態、検証済み画面遷移 |
-| `client` | GUI、キー、ラジアル音、カーソル保持。共通コードから参照しない |
+| `client` | 画面・ウィジェット・キー入力。共通コードから参照しない |
 | `compat` | Curios未導入でも動く境界と、導入時のみ読み込むAPI実装 |
-| `network` | 既存Payloadのcodecとサーバー側ハンドラー |
+| `network` | Payloadのcodec、共通のワイヤ形式、サーバー側ハンドラー |
 | `gametest` | 収納・フィルター・装備・メニュー・入力状態などの回帰テスト |
 
 ## 守る互換性
@@ -23,9 +24,9 @@
 - 登録IDは `packingcube:large_bag`、`storage_pouch`、`bag`、`bag_radial`、`bags`。収納ポーチはPC-58で`filter_bag`から改名し、旧IDは`DeferredRegister.addAlias`で解決し続ける。
 - `DataComponents.CONTAINER` と `packingcube_filter` の保存形式は変えない。
 - PayloadのID、プロトコルバージョン、フィールド順・数値操作IDは変えない。フィルター操作番号は `network/FilterActions` へ集約した。
-- 権限・カーソル保持・menu ID・バッグ所在の検証はクライアントへ移さない。
+- 権限・menu ID・バッグ所在の検証はクライアントへ移さない。
 - Curios型を `BagEquipment` の共通メソッドの引数・戻り値へ漏らさない。
-- B/C、ラジアル選択、ghost sample、フィルター、カーソル保持は既存動作を維持する。
+- B/C、ラジアル選択、ghost sample、フィルターは既存動作を維持する。
 
 ## バッグを開く処理
 
@@ -55,9 +56,9 @@
 Javaは4スペースのAOSP書式で整形済み。今回の大きな行差分には書式統一とimport整理が含まれる。機能変更は音・登録クラスの責務分離・datagen・操作番号定数化・開く処理の共通化に限定した。
 
 
-## カーソル解放の注意
+## カーソル解放
 
-バッグの位置復元は画面init後ではなくadded内で行う。捕捉解除時の中央ジャンプを避けるため、HIDDENでdisabledモードを抜け、MouseHandlerの座標・捕捉フラグ・差分を同期してから保存位置を表示する。必要な5フィールドだけをAccess Transformerで公開する。一般の画面やワールドへ戻るgrabMouseを改変しない。ATの変更はホットリロードではなく、Gradle再読み込みとクライアント再起動で確認する。
+バッグ画面はカーソル位置を記憶も復元もしない。開くときはMinecraft標準のreleaseMouseに任せ、閉じるときもワールドのgrabMouseを改変しない。以前のBagCursorMemory／BagCursorPosition／BagCursorReleaseとMouseHandlerのAccess Transformer公開はPC-116で削除した。
 
 ## 自動収納の設定と優先順位
 
@@ -100,7 +101,7 @@ WidgetSkin/NineSliceAxisはクライアント非依存の状態選択と伸縮�
 
 ## PC-53：登録入口とイベントバスの分離
 
-`Packingcube` → `ModRegistries.register(modBus)` → アイテム・クリエイティブタブ・メニューの順で登録する。各DeferredRegisterの所有者と公開フィールドは変更しない。`packingcube:refill_pouch`を含む既存IDを維持する。
+`PackingCube` → `ModRegistries.register(modBus)` → アイテム・クリエイティブタブ・メニューの順で登録する。各DeferredRegisterの所有者と公開フィールドは変更しない。`packingcube:refill_pouch`を含む既存IDを維持する。
 
 ゲーム中の12件のイベント購読は `ModGameEvents.register(NeoForge.EVENT_BUS)` に集約する。うち8件のLOWEST優先度と登録順は従来どおり。ネットワーク・datagen・任意Curios連携のライフサイクル登録は別責務として起動クラスに明示する。クライアント専用のClientEventsは変更しない。
 

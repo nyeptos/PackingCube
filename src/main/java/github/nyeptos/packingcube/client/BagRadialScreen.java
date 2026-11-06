@@ -1,9 +1,9 @@
 package github.nyeptos.packingcube.client;
 
-import github.nyeptos.packingcube.bag.input.BagKeyActions;
-import github.nyeptos.packingcube.bag.radial.RadialGeometry;
-import github.nyeptos.packingcube.bag.radial.RadialKeyState;
-import github.nyeptos.packingcube.bag.radial.RadialSelectionFeedback;
+import github.nyeptos.packingcube.gui.input.BagKeyActions;
+import github.nyeptos.packingcube.gui.radial.RadialGeometry;
+import github.nyeptos.packingcube.gui.radial.RadialKeyState;
+import github.nyeptos.packingcube.gui.radial.RadialSelectionFeedback;
 import github.nyeptos.packingcube.client.widget.ButtonAnimationRenderer;
 import github.nyeptos.packingcube.client.widget.WidgetTextures;
 import github.nyeptos.packingcube.gui.animation.ButtonAnimation;
@@ -30,7 +30,6 @@ import org.lwjgl.glfw.GLFW;
  * items.
  */
 public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu> {
-    private final BagCursorMemory cursorMemory = new BagCursorMemory();
     private int cx, cy, radius, hovered = -1;
     private RadialLayout backdrop;
     private RadialKeyState trigger;
@@ -47,19 +46,6 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
 
     public BagRadialScreen(BagRadialMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-    }
-
-    @Override
-    public void added() {
-        super.added();
-        cursorMemory.added();
-    }
-
-    @Override
-    public void removed() {
-        // Capture before vanilla grabs the mouse and centers it for camera control.
-        cursorMemory.remember();
-        super.removed();
     }
 
     private static Component text(String suffix) {
@@ -228,6 +214,18 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
                 backdrop.side());
         updateHover(mouseX, mouseY);
         g.drawCenteredString(font, title, cx, backdrop.titleY(), 0xFFFFFF);
+        boolean any = renderSlots(g);
+        renderCenterLabel(g, any);
+        renderManageButton(g, mouseX, mouseY);
+        // The same Item tooltip path as inventory stacks, backed only by sanitized filter preview
+        // data.
+        if (!sent && hovered >= 0 && !menu.icon(hovered).isEmpty()) {
+            g.renderTooltip(font, menu.icon(hovered), mouseX, mouseY);
+        }
+    }
+
+    /** The eight frames. An empty frame shows a dash; the hovered one plays its press. */
+    private boolean renderSlots(GuiGraphics g) {
         boolean any = false;
         for (int i = 0; i < RadialGeometry.COUNT; i++) {
             var icon = menu.icon(i);
@@ -252,6 +250,11 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
                         g.drawCenteredString(font, Integer.toString(number), x, y + 7, 0xFFFFFF);
                     });
         }
+        return any;
+    }
+
+    /** The centre label names the hovered slot, or says what the click will do. */
+    private void renderCenterLabel(GuiGraphics g, boolean any) {
         Component label =
                 !any
                         ? text("empty")
@@ -268,6 +271,10 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
                 cx,
                 cy + 4,
                 0xFFFFFF);
+    }
+
+    /** The manage button under the ring. */
+    private void renderManageButton(GuiGraphics g, int mouseX, int mouseY) {
         boolean manageHover = backdrop.containsManage(mouseX, mouseY);
         ButtonAnimationRenderer.draw(
                 g,
@@ -286,10 +293,5 @@ public final class BagRadialScreen extends AbstractContainerScreen<BagRadialMenu
                             RadialLayout.MANAGE_HEIGHT);
                     g.drawCenteredString(font, text("manage"), cx, manageY + 5, 0xFFFFFF);
                 });
-        // The same Item tooltip path as inventory stacks, backed only by sanitized filter preview
-        // data.
-        if (!sent && hovered >= 0 && !menu.icon(hovered).isEmpty()) {
-            g.renderTooltip(font, menu.icon(hovered), mouseX, mouseY);
-        }
     }
 }

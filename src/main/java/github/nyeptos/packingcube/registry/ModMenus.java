@@ -1,18 +1,18 @@
 package github.nyeptos.packingcube.registry;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
 import github.nyeptos.packingcube.menu.CraftingStationMenu;
 import github.nyeptos.packingcube.menu.station.AnvilStationMenu;
 import github.nyeptos.packingcube.menu.station.BlastFurnaceStationMenu;
 import github.nyeptos.packingcube.menu.station.BrewingStandStationMenu;
-import github.nyeptos.packingcube.menu.station.FurnaceStationMenu;
 import github.nyeptos.packingcube.menu.station.CartographyStationMenu;
+import github.nyeptos.packingcube.menu.station.FurnaceStationMenu;
 import github.nyeptos.packingcube.menu.station.GrindstoneStationMenu;
 import github.nyeptos.packingcube.menu.station.LoomStationMenu;
-import github.nyeptos.packingcube.menu.station.SmokerStationMenu;
 import github.nyeptos.packingcube.menu.station.SmithingStationMenu;
+import github.nyeptos.packingcube.menu.station.SmokerStationMenu;
 import github.nyeptos.packingcube.menu.station.StonecutterStationMenu;
 
 import net.minecraft.core.registries.Registries;
@@ -25,10 +25,17 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 
 public final class ModMenus {
     private static final DeferredRegister<MenuType<?>> MENUS =
-            DeferredRegister.create(Registries.MENU, Packingcube.MODID);
+            DeferredRegister.create(Registries.MENU, PackingCube.MODID);
 
     public static final DeferredHolder<MenuType<?>, MenuType<BagMenu>> BAG_MENU =
             MENUS.register("bag", () -> IMenuTypeExtension.create(BagMenu::fromNetwork));
+    public static final DeferredHolder<MenuType<?>, MenuType<BagRadialMenu>> BAG_RADIAL_MENU =
+            MENUS.register(
+                    "bag_radial",
+                    () -> new MenuType<>(BagRadialMenu::new, FeatureFlags.DEFAULT_FLAGS));
+
+
+    // Carried stations: one menu per block kind so the vanilla panel logic is reused unchanged.
     public static final DeferredHolder<MenuType<?>, MenuType<CraftingStationMenu>>
             CRAFTING_STATION_MENU =
                     MENUS.register(
@@ -48,7 +55,9 @@ public final class ModMenus {
             CARTOGRAPHY_STATION =
                     MENUS.register(
                             "cartography_station",
-                            () -> IMenuTypeExtension.create(CartographyStationMenu::fromNetwork));
+                            () ->
+                                    IMenuTypeExtension.create(
+                                            CartographyStationMenu::fromNetwork));
     public static final DeferredHolder<MenuType<?>, MenuType<LoomStationMenu>> LOOM_STATION =
             MENUS.register(
                     "loom_station",
@@ -85,10 +94,6 @@ public final class ModMenus {
                             () ->
                                     IMenuTypeExtension.create(
                                             BrewingStandStationMenu::fromNetwork));
-    public static final DeferredHolder<MenuType<?>, MenuType<BagRadialMenu>> BAG_RADIAL_MENU =
-            MENUS.register(
-                    "bag_radial",
-                    () -> new MenuType<>(BagRadialMenu::new, FeatureFlags.DEFAULT_FLAGS));
 
     private ModMenus() {}
 

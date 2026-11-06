@@ -28,6 +28,7 @@ public enum WidgetSkin {
     SLIDER_KNOB_NORMAL(8, 12, 0, 0),
     SLIDER_KNOB_HOVERED(8, 12, 0, 0),
     SLIDER_KNOB_DRAGGING(8, 12, 0, 0);
+
     public final int width, height, borderX, borderY;
 
     WidgetSkin(int width, int height, int borderX, int borderY) {

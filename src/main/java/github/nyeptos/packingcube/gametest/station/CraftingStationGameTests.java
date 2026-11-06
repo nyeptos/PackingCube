@@ -2,7 +2,7 @@ package github.nyeptos.packingcube.gametest.station;
 
 import com.mojang.authlib.GameProfile;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
 import github.nyeptos.packingcube.menu.CraftingStationMenu;
@@ -30,7 +30,7 @@ import java.util.OptionalInt;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class CraftingStationGameTests {
     public static final class StationPlayer extends Player {

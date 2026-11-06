@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.gametest.gui;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.gui.animation.ButtonAnimation;
 import github.nyeptos.packingcube.gui.animation.ButtonHoverState;
 import github.nyeptos.packingcube.gui.input.SettingsScrollState;
@@ -11,7 +11,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class ButtonHoverGameTests {
     @GameTest(template = "empty")

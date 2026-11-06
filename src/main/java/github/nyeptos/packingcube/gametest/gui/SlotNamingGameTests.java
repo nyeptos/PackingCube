@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.gametest.gui;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.client.widget.RefillTargetPanel;
 
 import net.minecraft.gametest.framework.GameTest;
@@ -10,7 +10,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 import java.util.List;
 
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class SlotNamingGameTests {
     @GameTest(template = "empty")

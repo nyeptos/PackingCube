@@ -1,8 +1,8 @@
 package github.nyeptos.packingcube.gametest.refill;
 
-import github.nyeptos.packingcube.Packingcube;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.PackingCube;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.registry.ModItems;
 
@@ -15,7 +15,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /** Unified "refill up to N when at most M remain" rule and its migration from PC-45 timings. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillMethodGameTests {
     private static final String KEY = "packingcube_refill";
@@ -52,22 +52,22 @@ public final class RefillMethodGameTests {
     public static void legacyTimingsMigrateToThresholds(GameTestHelper h) {
         var fresh = pouch();
         h.assertTrue(
-                RefillSettings.threshold(fresh) == 0
-                        && RefillSettings.target(fresh) == RefillSettings.MAX_TARGET,
+                RefillPouchSettings.threshold(fresh) == 0
+                        && RefillPouchSettings.target(fresh) == RefillPouchSettings.MAX_TARGET,
                 "A new pouch waits for an empty hand and refills a full stack");
         h.assertTrue(
-                RefillSettings.threshold(legacy("empty", 0)) == 0,
+                RefillPouchSettings.threshold(legacy("empty", 0)) == 0,
                 "Empty timing becomes threshold 0");
         h.assertTrue(
-                RefillSettings.threshold(legacy("threshold", 0)) == 16,
+                RefillPouchSettings.threshold(legacy("threshold", 0)) == 16,
                 "Threshold timing keeps the stored count");
         var use = legacy("use", 32);
         h.assertTrue(
-                RefillSettings.threshold(use) == 31 && RefillSettings.target(use) == 32,
+                RefillPouchSettings.threshold(use) == 31 && RefillPouchSettings.target(use) == 32,
                 "Use timing becomes one below the target");
-        h.assertTrue(RefillSettings.set(use, "target", "8"), "Target stays editable");
+        h.assertTrue(RefillPouchSettings.set(use, "target", "8"), "Target stays editable");
         h.assertTrue(
-                RefillSettings.threshold(use) == 7 && !RefillSettings.set(use, "timing", "use"),
+                RefillPouchSettings.threshold(use) == 7 && !RefillPouchSettings.set(use, "timing", "use"),
                 "Writing migrates the legacy value and drops the old field");
         h.succeed();
     }
@@ -76,24 +76,24 @@ public final class RefillMethodGameTests {
     public static void targetAndThresholdStayOrdered(GameTestHelper h) {
         var pouch = pouch();
         h.assertTrue(
-                RefillSettings.set(pouch, "target", "16")
-                        && RefillSettings.set(pouch, "threshold", "12"),
+                RefillPouchSettings.set(pouch, "target", "16")
+                        && RefillPouchSettings.set(pouch, "threshold", "12"),
                 "Both sliders save");
         h.assertTrue(
-                RefillSettings.target(pouch) == 16 && RefillSettings.threshold(pouch) == 12,
+                RefillPouchSettings.target(pouch) == 16 && RefillPouchSettings.threshold(pouch) == 12,
                 "Chosen counts are kept");
         h.assertTrue(
-                RefillSettings.set(pouch, "target", "5")
-                        && RefillSettings.threshold(pouch) == 4,
+                RefillPouchSettings.set(pouch, "target", "5")
+                        && RefillPouchSettings.threshold(pouch) == 4,
                 "Lowering the target lowers the threshold");
         h.assertTrue(
-                RefillSettings.set(pouch, "threshold", "63")
-                        && RefillSettings.threshold(pouch) == 4,
+                RefillPouchSettings.set(pouch, "threshold", "63")
+                        && RefillPouchSettings.threshold(pouch) == 4,
                 "The threshold can never reach the target");
         h.assertTrue(
-                !RefillSettings.set(pouch, "target", "0")
-                        && !RefillSettings.set(pouch, "target", "65")
-                        && !RefillSettings.set(pouch, "threshold", "64"),
+                !RefillPouchSettings.set(pouch, "target", "0")
+                        && !RefillPouchSettings.set(pouch, "target", "65")
+                        && !RefillPouchSettings.set(pouch, "threshold", "64"),
                 "Out-of-range slider values are rejected");
         h.succeed();
     }
@@ -101,15 +101,15 @@ public final class RefillMethodGameTests {
     @GameTest(template = "empty")
     public static void desiredFollowsTheUnifiedRule(GameTestHelper h) {
         var pouch = pouch();
-        RefillSettings.set(pouch, "target", "16");
-        RefillSettings.set(pouch, "threshold", "4");
+        RefillPouchSettings.set(pouch, "target", "16");
+        RefillPouchSettings.set(pouch, "threshold", "4");
         h.assertTrue(
-                RefillSettings.desired(pouch, 5, 64) == 5
-                        && RefillSettings.desired(pouch, 4, 64) == 16
-                        && RefillSettings.desired(pouch, 0, 64) == 16,
+                RefillPouchSettings.desired(pouch, 5, 64) == 5
+                        && RefillPouchSettings.desired(pouch, 4, 64) == 16
+                        && RefillPouchSettings.desired(pouch, 0, 64) == 16,
                 "Refills only at or below the threshold");
         h.assertTrue(
-                RefillSettings.desired(pouch, 0, 8) == 8,
+                RefillPouchSettings.desired(pouch, 0, 8) == 8,
                 "The item's own stack limit still wins");
         h.succeed();
     }
@@ -117,27 +117,27 @@ public final class RefillMethodGameTests {
     @GameTest(template = "empty")
     public static void slotRulesUseTheSameMigrationAndClamp(GameTestHelper h) {
         var pouch = pouch();
-        RefillSlotSettings.set(pouch, 0, "destination", RefillTargets.inventory(0));
-        RefillSlotSettings.set(pouch, 0, "target", "3");
+        RefillSlotDestinations.set(pouch, 0, "destination", RefillTargets.inventory(0));
+        RefillSlotDestinations.set(pouch, 0, "target", "3");
         h.assertTrue(
-                RefillSlotSettings.get(pouch, 0).threshold() == 0,
+                RefillSlotDestinations.get(pouch, 0).threshold() == 0,
                 "A new slot rule waits for an empty destination");
-        RefillSlotSettings.set(pouch, 0, "threshold", "2");
+        RefillSlotDestinations.set(pouch, 0, "threshold", "2");
         h.assertTrue(
-                RefillSlotSettings.get(pouch, 0).threshold() == 2
-                        && RefillSlotSettings.get(pouch, 0).desired(3, 64) == 3,
+                RefillSlotDestinations.get(pouch, 0).threshold() == 2
+                        && RefillSlotDestinations.get(pouch, 0).desired(3, 64) == 3,
                 "Above the threshold the destination is left alone");
-        RefillSlotSettings.set(pouch, 0, "target", "5");
+        RefillSlotDestinations.set(pouch, 0, "target", "5");
         h.assertTrue(
-                RefillSlotSettings.get(pouch, 0).desired(2, 64) == 5,
+                RefillSlotDestinations.get(pouch, 0).desired(2, 64) == 5,
                 "At the threshold the slot tops up to its target");
-        RefillSlotSettings.set(pouch, 0, "target", "1");
+        RefillSlotDestinations.set(pouch, 0, "target", "1");
         h.assertTrue(
-                RefillSlotSettings.get(pouch, 0).threshold() == 0,
+                RefillSlotDestinations.get(pouch, 0).threshold() == 0,
                 "Lowering the slot target lowers its threshold");
         h.assertTrue(
-                !RefillSlotSettings.set(pouch, 0, "target", "0")
-                        && !RefillSlotSettings.set(pouch, 0, "timing", "use"),
+                !RefillSlotDestinations.set(pouch, 0, "target", "0")
+                        && !RefillSlotDestinations.set(pouch, 0, "timing", "use"),
                 "Zero targets and the removed timing field are rejected");
 
         var saved = pouch();
@@ -151,7 +151,7 @@ public final class RefillMethodGameTests {
                     sources.put("0", slot);
                 });
         h.assertTrue(
-                RefillSlotSettings.get(saved, 0).threshold() == 4,
+                RefillSlotDestinations.get(saved, 0).threshold() == 4,
                 "Legacy per-slot use timing becomes one below its target");
         h.succeed();
     }

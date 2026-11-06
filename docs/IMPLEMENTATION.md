@@ -4,7 +4,7 @@
 
 | ファイル | 役割 |
 |---|---|
-| `Packingcube` | アイテムとクリエイティブタブの登録、共通イベント登録 |
+| `PackingCube` | アイテムとクリエイティブタブの登録、共通イベント登録 |
 | `BagItem` | バッグの右クリック使用、単体収納禁止の宣言 |
 | `BagInventory` | コンポーネントからの復元、変更ごとの保存、部分収納 |
 | `BagFilter` | タグ・アイテムID・除外条件の保存と判定 |
@@ -163,17 +163,14 @@ GUIには9枠のみ表示。開くときにプレイヤーの通常インベン�
 - RadialSelectionFeedbackは直前の有効ターゲットを追跡し、対象変化時のみ音を鳴らす。mouseMovedとrender両方から呼んでも二重再生しない。中央・空枠は無音で追跡を解除する。
 - 音はクライアント専用SimpleSoundInstance.forUIでUI_BUTTON_CLICK、移動pitch=1.6、確定要求pitch=1.8、volume=0.25。選択送信済みフラグで再送・確定音重複を防止。ワールド音の配信や専用音声資産は追加しない。
 
-## バッグ共通のカーソル位置保持
+## カーソル位置の保持（PC-116で削除）
 
-- BagRadialScreen.initのラジアル中心へのglfwSetCursorPosは削除済み。
-- BagScreen／BagRadialScreenのadded（Minecraft.releaseMouseより前）とremoved（カメラ用grabMouseより前）で現在位置を扱う。GUIが既に表示中なら位置を記憶するだけで、ネイティブのカーソル状態を書き換えない。
-- BagCursorMemoryはクライアント専用。捕捉中かつ記憶位置がある場合は、addedでBagCursorReleaseを呼び、非表示→内部状態同期→座標移動→表示の順に解放する。解放後はmouseGrabbed=falseなのでMinecraft標準のreleaseMouseは中央移動を行わない。
-- BagCursorReleaseは座標解決とバックエンドの順序を共通ロジックとして検証する。GLFWがdisabled解除時に以前の中央位置を戻しても、その段階はHIDDENで表示しない。
-- MouseHandlerのmouseGrabbed/xpos/ypos/accumulatedDX/accumulatedDYのみAccess Transformerで公開。内部のホバー座標とネイティブ座標を表示前に同期し、移動差分をゼロにする。setIgnoreFirstMoveで合成移動を実ドラッグとして扱わせない。
-- BagCursorPositionはウィンドウ座標を正規化して保持し、GUIスケールに依存せず、リサイズ後の範囲内へ補正する。無効値・最小化サイズは無視する。
-- initには復元処理がないため、編集パネルのrebuildWidgetsやリサイズで古い位置へ戻さない。WeakReferenceでワールドを比較し、切り替え時は記憶をクリアする。
-- 記憶がない初回は標準解放に任せる。非アクティブ時は独自復元しない。ワールドへ閉じる際のバニラgrabMouseや、他MODのGUIは変更しない。
-- AT追加を反映するには完全なクライアント再起動とGradle再読み込みが必要。メニューID・収納・フィルター・通信形式は変更しない。
+バッグ画面はカーソル位置を記憶も復元もしない。開くときはMinecraft標準のreleaseMouseに任せ、閉じるときもワールドのgrabMouseを改変しない。
+
+- 削除したもの：`client/BagCursorMemory`、`gui/input/BagCursorPosition`、`gui/input/BagCursorRelease`、`gametest/gui/BagCursorGameTests`（6件）。
+- `BagScreen.added`／`BagRadialScreen.added`／`removed` から呼び出しを外した。`BagRadialScreen` はadded/removedの上書きごと削除、`BagScreen.removed` はウィンドウ状態の停止とツールチップの破棄だけを残した。
+- `MouseHandler` の mouseGrabbed／xpos／ypos／accumulatedDX／accumulatedDY を公開していたAccess Transformerの5行も削除した。
+- 画面を開いたときのカーソル位置はバニラと同じ（ウィンドウ中央）。メニューID・収納・フィルター・通信形式は変更しない。
 
 ## レジストリ・音・datagen・保守性の整理
 
@@ -300,7 +297,7 @@ No new entity/item model, crafting recipe, vanilla screen replacement, or Git co
 
 ### PC-47
 
-Implemented nine independent `RefillSlotSettings` rules, one destination each with shared-target
+Implemented nine independent `RefillSlotDestinations` rules, one destination each with shared-target
 priority, enabled/replace/timing/count settings. `RefillDestination` adapts actual vanilla Slots
 and optional live Curios handlers. `RefillDispatcher` performs deterministic source-specific supply,
 empty-slot initialization, safe replacement return reservations, and no same-pass repeat replacement.
@@ -476,7 +473,7 @@ GameTestは、フィルターが受け取るアイテムでも空き頭枠が優
 - 音は `UiInteractionSounds.slide()`（UI_BUTTON_CLICK 1.4F / 0.12F）を追加し、`SliderSoundState` が60ms間隔で間引く。掴んだ瞬間は従来のグラブ音、ドラッグとホイールはステップ音、離したときは鳴らさない。
 - ホイールは `SettingsScrollPanel` がホバー中のスライダーへ先に渡し、それ以外は従来どおりページをスクロールする。
 - スライダーの上限は、補充先スロットに今あるアイテム（空ならポーチの在庫）の最大スタックに自動で合わせる。分からないときだけ64。`BagScreen` が `Access#destinationLimit` で実値を渡し、パネルは表示も保存もその範囲に収める。
-- 判定を `remaining <= threshold` に統一した。`RefillSettings.desired` と `RefillSlotSettings.Rule#desired` の両方が同じ規則で、しきい値を超えていれば何もしない。
+- 判定を `remaining <= threshold` に統一した。`RefillPouchSettings.desired` と `RefillSlotDestinations.Rule#desired` の両方が同じ規則で、しきい値を超えていれば何もしない。
 - 保存は `threshold`（0〜63）と `target`（1〜64）の2値。しきい値は常に補充後の個数−1以下へクランプし、書き込み時に `timing` を解釈して正規化する（empty→0、threshold→保存値か16、use→target−1、target=0→64）。
 - 補充処理から使わなくなった `RefillDispatcher.tick` の消費スロット引数を削除した。取引補充と、`RefillService` の実消費を起点にする経路は従来どおり。
 - 保存形式のキー名と通信形式は変更しない。旧ポーチは読み込み時に移行する。
@@ -489,9 +486,9 @@ GameTestは、旧3択の移行、しきい値と補充後の個数の上下関�
 
 置換で押し出された旧アイテムを、インベントリではなく同じポーチへ戻せるようにし、戻した枠を補充に使わないようにした。設定は枠ごとに独立した2つのON/OFFで、置換ONのときだけ補充先ページに並べる。
 
-- `RefillSettings` に `locked` の9bitマスクを追加した。`lockedMask`/`locked`/`setLocked` だけを公開し、アイテム本体へ印を付けないので分割・結合・手動移動で印が残らない。
+- `RefillPouchSettings` に `locked` の9bitマスクを追加した。`lockedMask`/`locked`/`setLocked` だけを公開し、アイテム本体へ印を付けないので分割・結合・手動移動で印が残らない。
 - `BagInventory` の `setItem`/`removeItem` を上書きし、枠が空になった時点でその枠のロックを外す。空のまま書き込むたびにデータを作らないよう、ビットが立っているときだけ書く。
-- `RefillSlotSettings.Rule` に `collect`/`lock` を追加した（未保存はどちらもON）。`get`/`set`/`copy` と通信の許容fieldへ通し、既存ポーチは読み込み時にONとして扱う。
+- `RefillSlotDestinations.Rule` に `collect`/`lock` を追加した（未保存はどちらもON）。`get`/`set`/`copy` と通信の許容fieldへ通し、既存ポーチは読み込み時にONとして扱う。
 - `RefillDispatcher` はロック中の補充元を、補充先や在庫の判定より前に除外する。置換時は「今回の取り出し後の内容」で戻し先を探し、同じアイテム・同じコンポーネントの空き→空き枠の順に1枠へ収める。1枠に入りきらない場合と枠が無い場合は、従来のインベントリ返却へ切り替え、どちらも不可なら何も書かずに中止する。
 - 書き込みはロック→枠内容の順に1回の保存で行う。ポーチの親インベントリへは枠の保存が両方をまとめて伝えるため、ロックだけが取り残されない。
 - ポーチ画面はロック中の枠を暗く塗り、コード描画の小さな鍵とツールチップ行を出す。新しいテクスチャは追加しない。
@@ -519,7 +516,7 @@ GameTestは、小窓が右→左→画面内へと配置されること、行数
 
 置換の判定に耐久の比較とそのON/OFFを足したが、設定項目が増えるだけで使い道が薄いため撤回した。置換は「別のアイテムと置換」の1スイッチだけに戻す。
 
-- `RefillSlotSettings.Rule` から `durability` を削除し、`get`/`set`/`copy` からも外した。既存アイテムに残る `durability` キーは読まないだけで、害はない。
+- `RefillSlotDestinations.Rule` から `durability` を削除し、`get`/`set`/`copy` からも外した。既存アイテムに残る `durability` キーは読まないだけで、害はない。
 - `RefillDispatcher` は耐久の比較をやめ、置換ONなら別アイテム・別データをそのまま入れ替える。比較用の補助メソッドも削除した。
 - 補充先ページは12行から11行へ戻し、優先度を置換ONで10行目、OFFで8行目に置く。耐久の行は削除した。
 - 言語ファイルから耐久関連のキーを削除し、日英をrunDataで再生成した。
@@ -530,7 +527,7 @@ GameTestは、置換ONで使いかけが新品を置き換えること、OFFで�
 
 置換ONだと、少し傷ついた工具でも新品とすぐ入れ替わっていた。壊れる直前まで使いたいので、同じアイテムの入れ替えだけを残り耐久で待たせる。
 
-- `RefillSlotSettings.Rule` に `durabilityMode`（`off`/`percent`/`count`）と `durability`（1〜100、未設定は5）を追加した。`off` は従来どおりの置換。
+- `RefillSlotDestinations.Rule` に `durabilityMode`（`off`/`percent`/`count`）と `durability`（1〜100、未設定は5）を追加した。`off` は従来どおりの置換。
 - `RefillDispatcher` の置換判定に `wornEnough` を足した。同じアイテムで両方とも耐久を持つときだけ残り耐久を測り、`percent` は残り÷最大の割合、`count` は残りの点数で比べる。しきい値を上回る間は何も書かずに候補を飛ばすので、下位の候補も使われない。
 - 別アイテムの置換、耐久を持たないアイテム、`off` は今までどおり。
 - 補充方法ページは4行目がモード切り替え、5行目がスライダー。OFFではスライダーを出さないので行数は増えない。
@@ -547,76 +544,3 @@ GameTestは、％で上限を超える間は入れ替えないこと、壊れる
 - 耐久しきい値のボタン表示も同じくスライダー値を読む。
 
 GameTestは、しきい値の数値を変えてもパネルの形状が変わらないこと、モードを変えたときだけ変わることを確認する。
-
-## PC-78：同じ置換先を狙う別の補充元が先に交換してしまう
-
-耐久しきい値を低い％・低い実数にしても即座に交換される、という報告への修正。しきい値そのものは
-`PC-76` の判定で正しく効いていたが、待つ側は候補を飛ばすだけで置換先を確保していなかった。同じ
-置換先を狙う別の補充元（別スロットや別ポーチ）にしきい値なしのルールがあると、そちらが同じパスで
-交換してしまう。
-
-- `RefillDispatcher` に `waitsForWear` を足し、置換先ごとに「その置換先を狙う全ルール」を見る
-  ようにした。1つでも待つルールがあれば、その置換先はそのパスでは誰も触らない。
-- 待つ側は `claimed` に入れて確保する。別アイテムを補充するルールや置換OFFのルールは対象外。
-- 単独ルールの挙動は変えていない。しきい値なしのルールだけが複数ある場合は従来どおり交換する。
-
-GameTestは、しきい値あり・なしのルールを同じ置換先に向けたときに、どちらが先に並んでも交換しない
-こと、両方しきい値なしなら従来どおり交換することを確認する。
-
-## PC-79：置換判定の内訳をコマンドで見られるようにする
-
-耐久しきい値を入れても即座に交換される、という報告が続いた。判定そのものはGameTestで通っている
-ため、実機で「どのルールが、どの置換先を見て、何を待っているか」を出せるようにする。
-
-- `/packingcube refillrules` を追加。所持している設定済みポーチの全ルールを1行ずつ出す。読み取り
-  専用で、アイテムも設定も変えない。
-- 1行の内容：補充元スロットの有効/無効、置換先ID、置換ON/OFF、耐久モードと値、補充元のアイテムと
-  ダメージ、置換先のアイテムとダメージ、残り（％または実数）、そして判定（`fill`／`same`／
-  `keep`／`swap`／`wait`／`no-destination`）。
-- 判定は `RefillDispatcher.wornEnough` をそのまま使うので、表示と実際の挙動がずれない。
-- `RefillDispatcher.wornEnough` をパッケージ内公開にした。挙動は変えていない。
-
-GameTestは、しきい値を上回る間は `-> wait`、壊れる直前は `-> swap` と出ることを確認する。
-
-## PC-79：置換判定の内訳をコマンドで見られるようにする
-
-耐久しきい値を入れても即座に交換される、という報告が続いた。判定そのものはGameTestで通っている
-ため、実機で「どのルールが、どの置換先を見て、何を待っているか」を出せるようにする。
-
-- `/packingcube refillrules` を追加。所持している設定済みポーチの全ルールを1行ずつ出す。読み取り
-  専用で、アイテムも設定も変えない。
-- 1行の内容：補充元スロットの有効/無効、置換先ID、置換ON/OFF、耐久モードと値、補充元のアイテムと
-  ダメージ、置換先のアイテムとダメージ、残り（％または実数）、そして判定（`fill`／`same`／
-  `keep`／`swap`／`wait`／`no-destination`）。
-- 判定は `RefillDispatcher.wornEnough` をそのまま使うので、表示と実際の挙動がずれない。
-- `RefillDispatcher.wornEnough` をパッケージ内公開にした。挙動は変えていない。
-
-GameTestは、しきい値を上回る間は `-> wait`、壊れる直前は `-> swap` と出ることを確認する。
-
-## PC-78：同じ置換先を狙う別の補充元が先に交換してしまう
-
-耐久しきい値を低い％・低い実数にしても即座に交換される、という報告への修正。しきい値そのものは
-`PC-76` の判定で正しく効いていたが、待つ側は候補を飛ばすだけで置換先を確保していなかった。同じ
-置換先を狙う別の補充元（別スロットや別ポーチ）にしきい値なしのルールがあると、そちらが同じパスで
-交換してしまう。
-
-- `RefillDispatcher` に `waitsForWear` を足し、置換先ごとに「その置換先を狙う全ルール」を見る
-  ようにした。1つでも待つルールがあれば、その置換先はそのパスでは誰も触らない。
-- 待つ側は `claimed` に入れて確保する。別アイテムを補充するルールや置換OFFのルールは対象外。
-- 単独ルールの挙動は変えていない。しきい値なしのルールだけが複数ある場合は従来どおり交換する。
-
-GameTestは、しきい値あり・なしのルールを同じ置換先に向けたときに、どちらが先に並んでも交換しない
-こと、両方しきい値なしなら従来どおり交換することを確認する。
-
-
-## PC-57：ラジアルの枠基準の当たり判定
-
-PC-56適用時の不具合でユーザーが適用前へ戻したため、ラジアルの当たり判定だけを独立して作り直した。旧PC-56のパッチは再適用していない。
-
-RadialGeometryの角度セクター判定を、描画と同じ36px枠の矩形判定へ置き換えた。`frameLeft`/`frameTop`/`frameContains`を追加し、描画側も同じ値から枠を置くので、枠の位置と大きさが描画と入力で分岐しない。枠間の隙間、枠の外側、中央30pxのキャンセル領域は-1を返し、枠が重なる小画面では枠中心が最も近いものを選ぶ。NaNは選択しない。
-
-管理ボタンの矩形は`RadialLayout.MANAGE_WIDTH`/`MANAGE_HEIGHT`と`containsManage`へ集約し、描画・ホバー・クリックに散っていた130×18の判定を1か所にした。
-
-GameTestは、枠中心の選択、中央キャンセル、枠の角とその1px外、枠間の隙間、枠の外側、320×180〜1920×1080での一致、管理ボタンの画面内配置を確認する。従来のセクター前提のテストは枠前提へ置き換えた。
-
-アイコン・番号・枠画像・背景・アニメーション・通信形式・保存形式は変更しない。

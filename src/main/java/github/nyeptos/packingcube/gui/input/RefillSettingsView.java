@@ -1,7 +1,7 @@
 package github.nyeptos.packingcube.gui.input;
 
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.gui.layout.BagSettingsLayout;
 
 import net.minecraft.world.item.ItemStack;
@@ -24,8 +24,8 @@ public final class RefillSettingsView {
         source = value;
     }
 
-    public RefillSlotSettings.Rule rule(ItemStack settings) {
-        return RefillSlotSettings.get(settings, source);
+    public RefillSlotDestinations.Rule rule(ItemStack settings) {
+        return RefillSlotDestinations.get(settings, source);
     }
 
     private boolean priorityExpanded;
@@ -53,7 +53,7 @@ public final class RefillSettingsView {
     }
 
     public boolean editorVisible(ItemStack settings) {
-        return page == FILTER && RefillSettings.filterEnabled(settings);
+        return page == FILTER && RefillPouchSettings.filterEnabled(settings);
     }
 
     public int contentHeight(BagSettingsLayout layout, ItemStack settings) {
@@ -103,7 +103,7 @@ public final class RefillSettingsView {
     }
 
     public String shape(ItemStack settings) {
-        RefillSlotSettings.Rule rule = rule(settings);
+        RefillSlotDestinations.Rule rule = rule(settings);
         return source
                 + ":"
                 + page

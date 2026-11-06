@@ -1,8 +1,8 @@
 package github.nyeptos.packingcube.item;
 
 import github.nyeptos.packingcube.bag.BagInventory;
-import github.nyeptos.packingcube.bag.filter.BagFilterTooltip;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
+import github.nyeptos.packingcube.bag.BulkStore;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
 import github.nyeptos.packingcube.menu.BagMenuOpener;
 import github.nyeptos.packingcube.registry.ModItems;
 
@@ -30,27 +30,35 @@ public final class BagItem extends Item {
             ItemStack stack, Item.TooltipContext context, List<Component> lines, TooltipFlag flag) {
         super.appendHoverText(stack, context, lines, flag);
         if (!modules) BagFilterTooltip.append(stack, lines);
+        if (stack.is(ModItems.BULK_POUCH.get())) {
+            lines.add(Component.translatable("tooltip.packingcube.bulk_pouch"));
+            int held = BulkStore.count(stack);
+            if (held > 0)
+                lines.add(
+                        Component.translatable(
+                                "tooltip.packingcube.bulk_count", held, BulkStore.LIMIT));
+        }
         if (stack.is(ModItems.REFILL_POUCH.get())) {
             lines.add(Component.translatable("tooltip.packingcube.refill_supply"));
             lines.add(Component.translatable("tooltip.packingcube.refill_trade_note"));
             lines.add(
                     Component.translatable(
                             "gui.packingcube.refill_offhand_"
-                                    + (RefillSettings.offhandEnabled(stack) ? "on" : "off")));
+                                    + (RefillPouchSettings.offhandEnabled(stack) ? "on" : "off")));
             lines.add(
                     Component.translatable(
-                            "gui.packingcube.refill_target", RefillSettings.target(stack)));
+                            "gui.packingcube.refill_target", RefillPouchSettings.target(stack)));
             lines.add(
                     Component.translatable(
-                            "gui.packingcube.refill_threshold", RefillSettings.threshold(stack)));
+                            "gui.packingcube.refill_threshold", RefillPouchSettings.threshold(stack)));
             lines.add(
                     Component.translatable(
                             "gui.packingcube.refill_hotbar_"
-                                    + (RefillSettings.enabled(stack, false) ? "on" : "off")));
+                                    + (RefillPouchSettings.enabled(stack, false) ? "on" : "off")));
             lines.add(
                     Component.translatable(
                             "gui.packingcube.refill_trade_"
-                                    + (RefillSettings.enabled(stack, true) ? "on" : "off")));
+                                    + (RefillPouchSettings.enabled(stack, true) ? "on" : "off")));
         }
     }
 

@@ -18,7 +18,7 @@ public final class RefillService {
     }
 
     public static int hand(Player player, int slot, ItemStack before) {
-        boolean offhand = slot == RefillSettings.OFFHAND_SLOT;
+        boolean offhand = slot == RefillPouchSettings.OFFHAND_SLOT;
         if (player.level().isClientSide
                 || !player.isAlive()
                 || player.isSpectator()
@@ -40,7 +40,7 @@ public final class RefillService {
         boolean policyChosen = false;
         for (var pouch : RefillSupply.collect(player, slot)) {
             int desired =
-                    Math.min(ceiling, RefillSettings.desired(pouch.bagStack(), original, maximum));
+                    Math.min(ceiling, RefillPouchSettings.desired(pouch.bagStack(), original, maximum));
             int available = RefillSupply.available(java.util.List.of(pouch), before);
             int take = Math.min(available, desired - original - added);
             if (take <= 0) continue;

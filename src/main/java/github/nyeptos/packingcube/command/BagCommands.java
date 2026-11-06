@@ -1,11 +1,10 @@
 package github.nyeptos.packingcube.command;
 
-
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 
 import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.bag.refill.RefillDiagnostics;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.bag.refill.RefillSupply;
 import github.nyeptos.packingcube.registry.ModItems;
 
@@ -70,11 +69,11 @@ public final class BagCommands {
         var player = source.getPlayerOrException();
         int lines = 0;
         for (var pouch : RefillSupply.collect(player, -2)) {
-            if (!RefillSlotSettings.mapped(pouch.bagStack())) continue;
-            for (int i = 0; i < RefillSlotSettings.COUNT; i++) {
-                var rule = RefillSlotSettings.get(pouch.bagStack(), i);
+            if (!RefillSlotDestinations.mapped(pouch.bagStack())) continue;
+            for (int i = 0; i < RefillSlotDestinations.COUNT; i++) {
+                var rule = RefillSlotDestinations.get(pouch.bagStack(), i);
                 if (rule.destination().isEmpty() && rule.durabilityOff()) continue;
-                var text = RefillDiagnostics.rule(player, pouch, i);
+                var text = RefillDiagnostics.rule(player, pouch.getItem(i), rule);
                 source.sendSuccess(() -> Component.literal(text), false);
                 lines++;
             }
@@ -88,7 +87,7 @@ public final class BagCommands {
         for (int slot :
                 new int[] {
                     player.getInventory().selected,
-                    github.nyeptos.packingcube.bag.refill.RefillSettings.OFFHAND_SLOT
+                    github.nyeptos.packingcube.bag.refill.RefillPouchSettings.OFFHAND_SLOT
                 }) {
             var hand =
                     Component.translatable(

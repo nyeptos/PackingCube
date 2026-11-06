@@ -19,6 +19,8 @@ import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.network.chat.Component;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -151,6 +153,16 @@ public final class SettingsScrollPanel extends AbstractContainerEventHandler
 
     public double unscrolledY(double mouseY) {
         return scroll.unscrolledY(mouseY);
+    }
+
+    /** The visible widget under the pointer; help mode needs it to name the row it explains. */
+    @Nullable
+    public AbstractWidget widgetAt(double mouseX, double mouseY) {
+        if (!contains(mouseX, mouseY)) return null;
+        for (Entry entry : entries)
+            if (intersects(entry) && entry.widget().isMouseOver(mouseX, mouseY))
+                return entry.widget();
+        return null;
     }
 
     public boolean contains(double mouseX, double mouseY) {

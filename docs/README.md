@@ -78,7 +78,7 @@ Gradleを再読み込みし、`runClient` を実行する。修正パッチは�
 ./gradlew runGameTestServer
 ```
 
-GameTestは `src/main/java/.../gametest/BagGameTests.java`。開発用実行設定から検出する。
+GameTestは `src/main/java/.../gametest/` 配下（`bag` / `gui` / `refill` など機能別）。開発用実行設定から検出する。
 テストの内容と実行結果は `docs/VALIDATION.md` を参照。
 
 実プレイヤーのGUI操作・見た目・操作感は、IDEAから起動して別途確認すること。

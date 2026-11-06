@@ -2,9 +2,9 @@ package github.nyeptos.packingcube.gametest.refill;
 
 import com.mojang.authlib.GameProfile;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
-import github.nyeptos.packingcube.bag.refill.RefillSettings;
+import github.nyeptos.packingcube.bag.refill.RefillPouchSettings;
 import github.nyeptos.packingcube.gametest.support.LegacyRefillFixture;
 import github.nyeptos.packingcube.registry.ModItems;
 
@@ -27,7 +27,7 @@ import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 import java.util.UUID;
 
 /** Exercise server game-mode calls and Player.tick hooks, not a posted event plus manual shrink. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillRealUseGameTests {
     private static final class Actor extends FakePlayer {
@@ -170,8 +170,8 @@ public final class RefillRealUseGameTests {
         var p = new Actor(h.getLevel());
         var root = install(p, new ItemStack(Items.STONE, 8));
         var modules = new BagInventory(root, true, () -> {});
-        RefillSettings.set(modules.getItem(0), "target", "16");
-        RefillSettings.set(modules.getItem(0), "threshold", "15");
+        RefillPouchSettings.set(modules.getItem(0), "target", "16");
+        RefillPouchSettings.set(modules.getItem(0), "threshold", "15");
         modules.setChanged();
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STONE, 16));
         var mirror = new ClientMirror();
@@ -221,10 +221,10 @@ public final class RefillRealUseGameTests {
         var root = install(p, new ItemStack(Items.STONE, 12));
         var parent = new BagInventory(root, true, () -> {});
         var pouch = parent.getItem(0);
-        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(
+        github.nyeptos.packingcube.bag.refill.RefillSlotDestinations.set(
                 pouch, 0, "destination", "inventory:0");
-        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(pouch, 0, "target", "16");
-        github.nyeptos.packingcube.bag.refill.RefillSlotSettings.set(pouch, 0, "threshold", "15");
+        github.nyeptos.packingcube.bag.refill.RefillSlotDestinations.set(pouch, 0, "target", "16");
+        github.nyeptos.packingcube.bag.refill.RefillSlotDestinations.set(pouch, 0, "threshold", "15");
         parent.setChanged();
         p.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STONE, 16));
         var mirror = new ClientMirror();

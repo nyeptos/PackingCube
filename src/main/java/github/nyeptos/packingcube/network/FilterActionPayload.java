@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.network;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
@@ -13,7 +13,7 @@ public record FilterActionPayload(
         int containerId, int operation, int sampleSlot, String field, String value)
         implements CustomPacketPayload {
     public static final Type<FilterActionPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(Packingcube.MODID, "filter_action"));
+            new Type<>(ResourceLocation.fromNamespaceAndPath(PackingCube.MODID, "filter_action"));
     public static final StreamCodec<RegistryFriendlyByteBuf, FilterActionPayload> STREAM_CODEC =
             StreamCodec.composite(
                     ByteBufCodecs.VAR_INT,

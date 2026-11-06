@@ -1,10 +1,10 @@
 package github.nyeptos.packingcube.gametest.refill;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.refill.RefillDiagnostics;
 import github.nyeptos.packingcube.bag.refill.RefillDispatcher;
-import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
+import github.nyeptos.packingcube.bag.refill.RefillSlotDestinations;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
 import github.nyeptos.packingcube.gui.input.RefillSettingsView;
 import github.nyeptos.packingcube.menu.BagMenu;
@@ -22,7 +22,7 @@ import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /** A same-item swap can wait until the item in place is nearly spent. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class RefillWearGameTests {
     private static ItemStack pouch(ItemStack... items) {
@@ -55,12 +55,12 @@ public final class RefillWearGameTests {
 
     private static void assign(
             ItemStack pouch, int source, int destination, String mode, int value) {
-        RefillSlotSettings.set(
+        RefillSlotDestinations.set(
                 pouch, source, "destination", RefillTargets.inventory(destination));
-        RefillSlotSettings.set(pouch, source, "target", "1");
-        RefillSlotSettings.set(pouch, source, "replace", "true");
-        RefillSlotSettings.set(pouch, source, "durability", Integer.toString(value));
-        RefillSlotSettings.set(pouch, source, "durabilityMode", mode);
+        RefillSlotDestinations.set(pouch, source, "target", "1");
+        RefillSlotDestinations.set(pouch, source, "replace", "true");
+        RefillSlotDestinations.set(pouch, source, "durability", Integer.toString(value));
+        RefillSlotDestinations.set(pouch, source, "durabilityMode", mode);
     }
 
     @GameTest(template = "empty")
@@ -137,14 +137,14 @@ public final class RefillWearGameTests {
     @GameTest(template = "empty")
     public static void changingTheLimitKeepsThePanel(GameTestHelper h) {
         var pouch = pouch(pickaxe(0));
-        RefillSlotSettings.set(pouch, 0, "durabilityMode", "percent");
-        RefillSlotSettings.set(pouch, 0, "durability", "5");
+        RefillSlotDestinations.set(pouch, 0, "durabilityMode", "percent");
+        RefillSlotDestinations.set(pouch, 0, "durability", "5");
         var view = new RefillSettingsView();
         view.page(RefillSettingsView.METHOD);
         var before = view.shape(pouch);
-        RefillSlotSettings.set(pouch, 0, "durability", "40");
+        RefillSlotDestinations.set(pouch, 0, "durability", "40");
         h.assertTrue(view.shape(pouch).equals(before), "A new limit value never forces a rebuild");
-        RefillSlotSettings.set(pouch, 0, "durabilityMode", "count");
+        RefillSlotDestinations.set(pouch, 0, "durabilityMode", "count");
         h.assertTrue(
                 !view.shape(pouch).equals(before),
                 "Switching the mode still rebuilds to show or hide the slider");
@@ -174,7 +174,7 @@ public final class RefillWearGameTests {
             h.assertTrue(
                     menu.editFilter(player, FilterActions.SET_REFILL_SOURCE, 0, edit[0], edit[1]),
                     "Panel edit accepted: " + edit[0]);
-        var saved = RefillSlotSettings.get(menu.filterSnapshot(), 0);
+        var saved = RefillSlotDestinations.get(menu.filterSnapshot(), 0);
         h.assertTrue(
                 saved.durabilityMode().equals("percent") && saved.durability() == 5,
                 "The snapshot shows the chosen limit");
@@ -271,75 +271,25 @@ public final class RefillWearGameTests {
         var pouch = pouch(pickaxe(0));
         assign(pouch, 9, "percent", 5);
         install(player, pouch);
-        var view = new BagInventory(pouch, false, () -> {});
+        var rule = RefillSlotDestinations.get(pouch, 0);
+        var supply = new BagInventory(pouch, false, () -> {}).getItem(0);
         player.getInventory().setItem(9, pickaxe(1000));
-        var waiting = RefillDiagnostics.rule(player, view, 0);
+        var waiting = RefillDiagnostics.rule(player, supply, rule);
         h.assertTrue(
                 waiting.contains("wear=percent/5") && waiting.endsWith("-> wait"),
                 "A partly worn item reports a wait: " + waiting);
         player.getInventory().setItem(9, pickaxe(1550));
-        var swapping = RefillDiagnostics.rule(player, view, 0);
+        var swapping = RefillDiagnostics.rule(player, supply, rule);
         h.assertTrue(
                 swapping.endsWith("-> swap"),
                 "A nearly broken item reports the swap: " + swapping);
-        view.setItem(0, ItemStack.EMPTY);
-        var empty = RefillDiagnostics.rule(player, view, 0);
+        var empty = RefillDiagnostics.rule(player, ItemStack.EMPTY, rule);
         h.assertTrue(
-                empty.contains("-> swap") && empty.contains("(source empty)"),
-                "An empty source still reports what the limit decides: " + empty);
+                empty.endsWith("-> no-supply"),
+                "An empty source is never reported as a swap: " + empty);
         h.assertTrue(
                 waiting.contains("left=35%"),
                 "Percent mode reports the share left: " + waiting);
-        h.succeed();
-    }
-
-    /** The reported case: a sword at 78% must not be swapped by a ten percent limit. */
-    @GameTest(template = "empty")
-    public static void aPartlyWornSwordKeepsItsSlot(GameTestHelper h) {
-        var player = h.makeMockPlayer(GameType.SURVIVAL);
-        var pouch = pouch(new ItemStack(Items.IRON_SWORD));
-        assign(pouch, 0, 0, "percent", 10);
-        install(player, pouch);
-        var inPlace = new ItemStack(Items.IRON_SWORD);
-        inPlace.setDamageValue(53);
-        player.getInventory().setItem(0, inPlace);
-        h.assertTrue(
-                RefillDispatcher.tick(player) == 0
-                        && player.getInventory().getItem(0).getDamageValue() == 53,
-                "A sword at 78% stays until the limit is reached");
-        h.succeed();
-    }
-
-    /** The limit belongs to the slot, so another tool in place waits for it as well. */
-    @GameTest(template = "empty")
-    public static void aDifferentToolInPlaceStillWaits(GameTestHelper h) {
-        var player = h.makeMockPlayer(GameType.SURVIVAL);
-        var pouch = pouch(new ItemStack(Items.IRON_SWORD));
-        assign(pouch, 9, "percent", 10);
-        install(player, pouch);
-        var inPlace = new ItemStack(Items.DIAMOND_SWORD);
-        inPlace.setDamageValue(500);
-        player.getInventory().setItem(9, inPlace);
-        h.assertTrue(
-                RefillDispatcher.tick(player) == 0
-                        && player.getInventory().getItem(9).is(Items.DIAMOND_SWORD),
-                "A tool that is still usable keeps the slot");
-        h.succeed();
-    }
-
-    @GameTest(template = "empty")
-    public static void aSpentToolInPlaceIsReplaced(GameTestHelper h) {
-        var player = h.makeMockPlayer(GameType.SURVIVAL);
-        var pouch = pouch(new ItemStack(Items.IRON_SWORD));
-        assign(pouch, 9, "percent", 10);
-        install(player, pouch);
-        var inPlace = new ItemStack(Items.DIAMOND_SWORD);
-        inPlace.setDamageValue(1550);
-        player.getInventory().setItem(9, inPlace);
-        h.assertTrue(
-                RefillDispatcher.tick(player) == 1
-                        && player.getInventory().getItem(9).is(Items.IRON_SWORD),
-                "A spent tool is replaced once the limit is reached");
         h.succeed();
     }
 

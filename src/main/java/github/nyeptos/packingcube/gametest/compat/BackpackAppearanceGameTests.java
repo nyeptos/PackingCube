@@ -2,7 +2,7 @@ package github.nyeptos.packingcube.gametest.compat;
 
 import com.google.gson.JsonParser;
 
-import github.nyeptos.packingcube.Packingcube;
+import github.nyeptos.packingcube.PackingCube;
 
 import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -16,7 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 /** Resource integrity checks, not a substitute for a rendered client test. */
-@GameTestHolder(Packingcube.MODID)
+@GameTestHolder(PackingCube.MODID)
 @PrefixGameTestTemplate(false)
 public final class BackpackAppearanceGameTests {
     private static InputStream resource(String path) {
