@@ -4,6 +4,8 @@ import github.nyeptos.packingcube.bag.BagIdentity;
 import github.nyeptos.packingcube.bag.BagInventory;
 import github.nyeptos.packingcube.bag.filter.BagFilter;
 import github.nyeptos.packingcube.bag.refill.RefillSettings;
+import github.nyeptos.packingcube.bag.station.StationBlocks;
+import github.nyeptos.packingcube.menu.station.StationMenus;
 import github.nyeptos.packingcube.registry.ModItems;
 import github.nyeptos.packingcube.registry.ModMenus;
 
@@ -36,13 +38,16 @@ public final class BagRadialMenu extends AbstractContainerMenu implements BagRoo
         for (int i = 0; i < BagInventory.MODULE_SLOTS; i++) {
             ItemStack actual = modules == null ? ItemStack.EMPTY : modules.getItem(i);
             expected[i] = actual.copy();
-            if (BagInventory.isPouch(actual) && actual.getCount() == 1) {
+            boolean pouch = BagInventory.isPouch(actual);
+            if ((pouch || StationBlocks.isStation(actual)) && actual.getCount() == 1) {
                 ItemStack icon = actual.getItem().getDefaultInstance();
                 var name = actual.get(DataComponents.CUSTOM_NAME);
                 if (name != null) icon.set(DataComponents.CUSTOM_NAME, name);
-                BagFilter.copySettings(actual, icon);
-                if (actual.is(ModItems.REFILL_POUCH.get()))
-                    RefillSettings.copySettings(actual, icon);
+                if (pouch) {
+                    BagFilter.copySettings(actual, icon);
+                    if (actual.is(ModItems.REFILL_POUCH.get()))
+                        RefillSettings.copySettings(actual, icon);
+                }
                 icons.setItem(i, icon);
             }
             addSlot(
@@ -104,9 +109,21 @@ public final class BagRadialMenu extends AbstractContainerMenu implements BagRoo
         ItemStack targetStack = root;
         if (!modules) {
             ItemStack actual = parent.getItem(moduleSlot);
-            if (!BagInventory.isPouch(actual)
-                    || actual.getCount() != 1
-                    || !ItemStack.matches(actual, expected[moduleSlot])) return false;
+            boolean pouch = BagInventory.isPouch(actual);
+            boolean station = StationBlocks.isStation(actual);
+            if ((!pouch && !station) || actual.getCount() != 1) return false;
+            // A carried station keeps cooking while the wheel is open, so its slots and counters
+            // change under us. Only the block itself has to still be the one that was shown.
+            boolean same =
+                    station
+                            ? ItemStack.isSameItem(actual, expected[moduleSlot])
+                            : ItemStack.matches(actual, expected[moduleSlot]);
+            if (!same) return false;
+            if (station) {
+                // The station keeps its GUI contents on its own stack, so nothing is written here.
+                selected = true;
+                return StationMenus.open(player, rootId, moduleSlot, actual);
+            }
             target = new BagInventory(actual, false, parent);
             targetStack = actual;
         }

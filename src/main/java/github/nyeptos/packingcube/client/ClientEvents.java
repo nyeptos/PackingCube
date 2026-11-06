@@ -10,6 +10,16 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
+import net.minecraft.client.gui.screens.inventory.AnvilScreen;
+import net.minecraft.client.gui.screens.inventory.BlastFurnaceScreen;
+import net.minecraft.client.gui.screens.inventory.BrewingStandScreen;
+import net.minecraft.client.gui.screens.inventory.FurnaceScreen;
+import net.minecraft.client.gui.screens.inventory.CartographyTableScreen;
+import net.minecraft.client.gui.screens.inventory.GrindstoneScreen;
+import net.minecraft.client.gui.screens.inventory.LoomScreen;
+import net.minecraft.client.gui.screens.inventory.SmokerScreen;
+import net.minecraft.client.gui.screens.inventory.SmithingScreen;
+import net.minecraft.client.gui.screens.inventory.StonecutterScreen;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 
 @EventBusSubscriber(
@@ -40,5 +50,16 @@ public final class ClientEvents {
     public static void registerScreens(RegisterMenuScreensEvent event) {
         event.register(ModMenus.BAG_MENU.get(), BagScreen::new);
         event.register(ModMenus.BAG_RADIAL_MENU.get(), BagRadialScreen::new);
+        event.register(ModMenus.CRAFTING_STATION_MENU.get(), CraftingStationScreen::new);
+        event.register(ModMenus.STONECUTTER_STATION.get(), StonecutterScreen::new);
+        event.register(ModMenus.GRINDSTONE_STATION.get(), GrindstoneScreen::new);
+        event.register(ModMenus.CARTOGRAPHY_STATION.get(), CartographyTableScreen::new);
+        event.register(ModMenus.LOOM_STATION.get(), LoomScreen::new);
+        event.register(ModMenus.SMITHING_STATION.get(), SmithingScreen::new);
+        event.register(ModMenus.ANVIL_STATION.get(), AnvilScreen::new);
+        event.register(ModMenus.FURNACE_STATION.get(), FurnaceScreen::new);
+        event.register(ModMenus.SMOKER_STATION.get(), SmokerScreen::new);
+        event.register(ModMenus.BLAST_FURNACE_STATION.get(), BlastFurnaceScreen::new);
+        event.register(ModMenus.BREWING_STAND_STATION.get(), BrewingStandScreen::new);
     }
 }

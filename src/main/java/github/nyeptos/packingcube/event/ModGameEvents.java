@@ -22,5 +22,6 @@ public final class ModGameEvents {
         gameBus.addListener(EventPriority.LOWEST, RefillHandler::onTotem);
         gameBus.addListener(RefillHandler::onToss);
         gameBus.addListener(RefillHandler::onTick);
+        gameBus.addListener(StationHandler::onTick);
     }
 }

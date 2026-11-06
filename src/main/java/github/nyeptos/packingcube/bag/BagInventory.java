@@ -1,6 +1,7 @@
 package github.nyeptos.packingcube.bag;
 
 import github.nyeptos.packingcube.bag.filter.BagFilter;
+import github.nyeptos.packingcube.bag.station.StationBlocks;
 import github.nyeptos.packingcube.bag.refill.RefillSettings;
 import github.nyeptos.packingcube.registry.ModItems;
 
@@ -65,7 +66,8 @@ public final class BagInventory extends SimpleContainer {
 
     /** Shared by the server inventory and both client/server menu slots. */
     public static boolean accepts(boolean modules, ItemStack stack) {
-        if (modules) return isPouch(stack);
+        // A module slot holds a pouch or one crafting block that opens its GUI from the radial.
+        if (modules) return isPouch(stack) || StationBlocks.fitsModule(stack);
         // No bags, shulker boxes, bundles or other non-nestable containers.
         return !isBag(stack) && stack.getItem().canFitInsideContainerItems();
     }
