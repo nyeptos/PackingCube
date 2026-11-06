@@ -150,8 +150,8 @@ public final class RefillClarityGameTests {
                     "The empty-hand case is explained in the help line");
             for (var key :
                     new String[] {
-                        "source", "pages", "enabled", "select", "clear", "replace", "collect",
-                        "lock", "priority", "target", "threshold", "filter", "trade"
+                        "source", "pages", "enabled", "select", "pause", "clear", "replace",
+                        "collect", "lock", "priority", "target", "threshold", "filter", "trade"
                     })
                 h.assertTrue(
                         !json.get("gui.packingcube.refill_help_name_" + key).getAsString().isEmpty()

@@ -90,6 +90,7 @@ public final class RefillSettingsView {
             case FILTER -> {
                 rows.add(new HelpRow(2, "filter"));
                 rows.add(new HelpRow(3, "trade"));
+                rows.add(new HelpRow(4, "pause"));
             }
             default -> throw new IllegalStateException();
         }

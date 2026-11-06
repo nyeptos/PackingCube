@@ -47,6 +47,7 @@ public final class RefillTargetPanel {
     private List<Target> marks = List.of();
     private int left, top, curiosLeft, curiosWidth, scroll, total;
     private boolean scrollbarDragging, scrollbarHovered;
+    private boolean pausing;
     private int source;
 
     public void source(int value) {
@@ -65,7 +66,19 @@ public final class RefillTargetPanel {
         return interaction.selecting();
     }
 
+    /** Pause mode reuses the modal pointer capture but toggles the pouch's own supply slots. */
+    public boolean pausing() {
+        return pausing;
+    }
+
+    public void beginPause(int source) {
+        pausing = true;
+        interaction.begin(source);
+        feedback.clear();
+    }
+
     public void beginSelection(int source) {
+        pausing = false;
         interaction.begin(source);
         feedback.clear();
     }
@@ -76,6 +89,7 @@ public final class RefillTargetPanel {
 
     public void selecting(boolean value) {
         interaction.selecting(value);
+        if (!value) pausing = false;
         feedback.clear();
     }
 

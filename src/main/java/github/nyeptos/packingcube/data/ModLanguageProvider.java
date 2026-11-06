@@ -230,6 +230,14 @@ public final class ModLanguageProvider extends LanguageProvider {
         translated("gui.packingcube.refill_select_start", "Select destination slots", "補充先を選択");
         translated("gui.packingcube.refill_select_done", "Finish selecting", "選択を完了");
         translated(
+                "gui.packingcube.refill_pause_start",
+                "Pause supply on slots",
+                "補充を止める枠を選ぶ");
+        translated(
+                "gui.packingcube.refill_pause_banner",
+                "Click a pouch slot to pause or resume supply",
+                "枠をクリックすると補充の停止・再開を切り替えます");
+        translated(
                 "gui.packingcube.refill_select_hint",
                 "Select inventory, equipment or Curios slots directly.",
                 "インベントリ・装備・Curiosの枠から直接選びます。");
@@ -265,12 +273,12 @@ public final class ModLanguageProvider extends LanguageProvider {
                 "外したアイテムを回収：OFF");
         translated(
                 "gui.packingcube.refill_lock_on",
-                "Lock collected slot: ON",
-                "回収した枠をロック：ON");
+                "Auto-lock collected slot: ON",
+                "回収した枠を自動ロック：ON");
         translated(
                 "gui.packingcube.refill_lock_off",
-                "Lock collected slot: OFF",
-                "回収した枠をロック：OFF");
+                "Auto-lock collected slot: OFF",
+                "回収した枠を自動ロック：OFF");
         translated("gui.packingcube.refill_durability_off", "Durability: OFF", "耐久：OFF");
         translated(
                 "gui.packingcube.refill_durability_percent",
@@ -323,11 +331,27 @@ public final class ModLanguageProvider extends LanguageProvider {
                 "gui.packingcube.refill_help_body_collect",
                 "The swapped-out item goes back into this pouch. Off sends it to your inventory.",
                 "入れ替えで外したアイテムを、このポーチへ戻します。OFFならインベントリへ戻します。");
-        translated("gui.packingcube.refill_help_name_lock", "Slot lock", "枠ロック");
+        translated("gui.packingcube.refill_help_name_lock", "Slot auto-lock", "枠の自動ロック");
         translated(
                 "gui.packingcube.refill_help_body_lock",
-                "A slot holding a collected item stops supplying until you empty it.",
-                "回収したアイテムが入った枠は、空にするまで補充に使いません。");
+                "A slot holding a collected item stops supplying until you empty it."
+                        + " Pause supply on slots resumes it without emptying.",
+                "回収したアイテムが入った枠は、空にするまで補充に使いません。"
+                        + "「補充を止める枠を選ぶ」なら、中身を残したまま再開できます。");
+        translated("gui.packingcube.refill_help_name_pause", "Supply pause", "補充の停止");
+        translated(
+                "gui.packingcube.refill_help_body_pause",
+                "Pick the pouch slots that stop supplying. Items stay where they are, and"
+                        + " picking the same slot again resumes it.",
+                "補充を止める枠を選びます。中身はそのままで、同じ枠をもう一度選ぶと再開します。");
+        translated(
+                "gui.packingcube.refill_slot_locked",
+                "Collected slot: supply paused",
+                "回収済みの枠：補充停止中");
+        translated(
+                "gui.packingcube.refill_slot_unlock_hint",
+                "Use \"Pause supply on slots\" in the settings to resume",
+                "設定の「補充を止める枠を選ぶ」で再開できます");
         translated(
                 "gui.packingcube.refill_help_name_durability_mode",
                 "Durability limit",

@@ -69,8 +69,9 @@ public final class RefillHelpGameTests {
         h.assertTrue(
                 explained(view, pouch, 2)
                         && explained(view, pouch, 3)
-                        && !explained(view, pouch, 4),
-                "Filter explains its two switches only");
+                        && explained(view, pouch, 4)
+                        && !explained(view, pouch, 5),
+                "Shared explains its switches and the pouch-wide pause mode");
         h.succeed();
     }
 }

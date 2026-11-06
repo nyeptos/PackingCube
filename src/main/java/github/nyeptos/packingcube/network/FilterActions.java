@@ -18,5 +18,8 @@ public final class FilterActions {
 
     public static final int SET_REFILL_SOURCE = 11;
 
+    /** Pauses or resumes supply for one pouch slot without touching its contents. */
+    public static final int SET_REFILL_SLOT_LOCK = 12;
+
     private FilterActions() {}
 }

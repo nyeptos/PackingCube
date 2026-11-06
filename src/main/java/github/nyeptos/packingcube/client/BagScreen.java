@@ -127,7 +127,10 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         imageHeight = 132;
         inventoryLabelY = 38;
         super.init();
-        if (!editing || refillView.page() != RefillSettingsView.DESTINATIONS)
+        // A running slot mode owns the screen until it ends, whichever page started it. Only
+        // leaving the settings, or rebuilding from another page outside a mode, cancels it.
+        boolean modal = targetPanel.selecting();
+        if (!editing || (!modal && refillView.page() != RefillSettingsView.DESTINATIONS))
             targetPanel.selecting(false);
         var anchor = BagSettingsLayout.inventoryAnchor(width, height);
         leftPos = anchor.x();
@@ -170,7 +173,10 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
                     addRenderableWidget(
                             Button.builder(
                                             targetPanel.selecting()
-                                                    ? text("refill_select_cancel")
+                                                    ? text(
+                                                            targetPanel.pausing()
+                                                                    ? "refill_select_done"
+                                                                    : "refill_select_cancel")
                                                     : text("settings"),
                                             button -> {
                                                 if (targetPanel.selecting())
@@ -388,26 +394,14 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
                                 }
 
                                 public void toggleTargets() {
-                                    if (!menu.getCarried().isEmpty()) {
-                                        minecraft.player.displayClientMessage(
-                                                Component.translatable(
-                                                        "message.packingcube.empty_cursor"),
-                                                true);
-                                        return;
-                                    }
-                                    cancelInventoryDrag();
-                                    settingsPointerDown = false;
-                                    if (settingsPanel != null) {
-                                        settingsPanel.stopDragging();
-                                        settingsPanel.setFocused(null);
-                                    }
-                                    setFocused(null);
-                                    settingsWindow.state().stop();
+                                    if (!beginModalMode()) return;
                                     targetPanel.beginSelection(refillView.source());
-                                    // Remove the old settings listeners now, not on the next tick.
-                                    // A fast press/release must not be consumed by the hidden
-                                    // panel.
-                                    refillRebuildRequested = false;
+                                    rebuildWidgets();
+                                }
+
+                                public void togglePause() {
+                                    if (!beginModalMode()) return;
+                                    targetPanel.beginPause(refillView.source());
                                     rebuildWidgets();
                                 }
                             },
@@ -505,6 +499,11 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         if (targetPanel.selecting()) {
             if (settingsButton != null && settingsButton.isMouseOver(mouseX, mouseY))
                 return super.mouseClicked(mouseX, mouseY, button);
+            if (targetPanel.pausing()) {
+                if (button == 0) togglePausedSlot(mouseX, mouseY);
+                cancelInventoryDrag();
+                return true;
+            }
             targetPanel.update(menu, leftPos, topPos);
             targetPanel.mouseClicked(mouseX, mouseY, button);
             cancelInventoryDrag();
@@ -562,6 +561,30 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
     private void cancelInventoryDrag() {
         isQuickCrafting = false;
         quickCraftSlots.clear();
+    }
+
+    /**
+     * Shared prelude for the modal slot modes: empty cursor, no live drag and no listeners left on
+     * the settings panel that is about to be hidden. Returns false when the gesture is refused.
+     */
+    private boolean beginModalMode() {
+        if (!menu.getCarried().isEmpty()) {
+            minecraft.player.displayClientMessage(
+                    Component.translatable("message.packingcube.empty_cursor"), true);
+            return false;
+        }
+        cancelInventoryDrag();
+        settingsPointerDown = false;
+        if (settingsPanel != null) {
+            settingsPanel.stopDragging();
+            settingsPanel.setFocused(null);
+        }
+        setFocused(null);
+        settingsWindow.state().stop();
+        // Remove the old settings listeners now, not on the next tick. A fast press/release must
+        // not be consumed by the hidden panel.
+        refillRebuildRequested = false;
+        return true;
     }
 
     @Override
@@ -804,8 +827,10 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         List<Component> lines = new ArrayList<>(super.getTooltipFromContainerItem(stack));
         if (hoveredSlot != null
                 && hoveredSlot.index < menu.visibleSlotCount()
-                && RefillSettings.locked(menu.filterSnapshot(), hoveredSlot.index))
+                && RefillSettings.locked(menu.filterSnapshot(), hoveredSlot.index)) {
             lines.add(Component.translatable("gui.packingcube.refill_slot_locked"));
+            lines.add(Component.translatable("gui.packingcube.refill_slot_unlock_hint"));
+        }
         return lines;
     }
 
@@ -846,7 +871,7 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
                     menu.isRefill() && editing);
             graphics.pose().popPose();
         }
-        if (menu.isRefill() && editing) {
+        if (menu.isRefill() && editing && !targetPanel.pausing()) {
             int sourceX = 7 + refillView.source() * 18;
             graphics.pose().pushPose();
             graphics.pose().translate(0, 0, 210);
@@ -863,15 +888,18 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
                     18,
                     18);
             graphics.pose().popPose();
-            if (targetPanel.selecting())
-                graphics.drawCenteredString(
-                        font,
-                        Component.translatable(
-                                "gui.packingcube.refill_selecting_source", refillView.source() + 1),
-                        88,
-                        -12,
-                        0xffffff);
         }
+        if (menu.isRefill() && editing && targetPanel.selecting())
+            graphics.drawCenteredString(
+                    font,
+                    targetPanel.pausing()
+                            ? Component.translatable("gui.packingcube.refill_pause_banner")
+                            : Component.translatable(
+                                    "gui.packingcube.refill_selecting_source",
+                                    refillView.source() + 1),
+                    88,
+                    -12,
+                    0xffffff);
         renderSettings(graphics, mouseX, mouseY);
         if (editing) FloatingWindow.prepareContainerCursorLayer(graphics);
     }
@@ -880,6 +908,19 @@ public final class BagScreen extends AbstractContainerScreen<BagMenu> {
         if (!editing || targetPanel.selecting()) return false;
         return settingsWindow.contains(mouseX, mouseY)
                 || (helpPane != null && helpPane.contains(mouseX, mouseY));
+    }
+
+    /** Pause mode: one click on a supply slot flips its lock and leaves the stack alone. */
+    private void togglePausedSlot(double mouseX, double mouseY) {
+        int slots = Math.min(RefillSettings.LOCK_SLOTS, menu.visibleSlotCount());
+        for (int i = 0; i < slots; i++) {
+            var slot = menu.getSlot(i);
+            double x = leftPos + slot.x, y = topPos + slot.y;
+            if (mouseX < x || mouseX >= x + 16 || mouseY < y || mouseY >= y + 16) continue;
+            boolean locked = RefillSettings.locked(menu.filterSnapshot(), i);
+            send(FilterActions.SET_REFILL_SLOT_LOCK, i, "locked", Boolean.toString(!locked));
+            return;
+        }
     }
 
     @Override

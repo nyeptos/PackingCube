@@ -385,6 +385,21 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
             broadcastChanges();
             return true;
         }
+        if (operation == FilterActions.SET_REFILL_SLOT_LOCK) {
+            if (modules
+                    || !refill
+                    || sampleSlot < 0
+                    || sampleSlot >= RefillSettings.LOCK_SLOTS
+                    || !field.equals("locked")
+                    || !(value.equals("true") || value.equals("false"))
+                    || !getCarried().isEmpty()) return false;
+            RefillSettings.setLocked(
+                    storage.bagStack(), sampleSlot, Boolean.parseBoolean(value));
+            contents.setChanged();
+            refreshFilterSnapshot();
+            broadcastChanges();
+            return true;
+        }
         if (operation == FilterActions.SET_REFILL_TARGET) {
             if (modules
                     || !refill

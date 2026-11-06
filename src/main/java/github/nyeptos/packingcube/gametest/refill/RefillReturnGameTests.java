@@ -6,6 +6,8 @@ import github.nyeptos.packingcube.bag.refill.RefillDispatcher;
 import github.nyeptos.packingcube.bag.refill.RefillSettings;
 import github.nyeptos.packingcube.bag.refill.RefillSlotSettings;
 import github.nyeptos.packingcube.bag.refill.RefillTargets;
+import github.nyeptos.packingcube.menu.BagMenu;
+import github.nyeptos.packingcube.network.FilterActions;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.gametest.framework.GameTest;
@@ -202,6 +204,74 @@ public final class RefillReturnGameTests {
         for (int i = 0; i < 36; i++)
             if (player.getInventory().getItem(i).is(Items.STONE)) stone++;
         h.assertTrue(stone == 0, "Nothing is dropped or duplicated into the inventory");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void thePauseRequestFlipsASlotLockWithoutTouchingItems(GameTestHelper h) {
+        var player = h.makeMockPlayer(GameType.SURVIVAL);
+        var pouch = pouch(new ItemStack(Items.STONE, 12), new ItemStack(Items.DIRT));
+        RefillSettings.setLocked(pouch, 1, true);
+        player.getInventory().setItem(0, pouch);
+        var menu = new BagMenu(60, player.getInventory(), storage(pouch), pouch, 0, false);
+        player.containerMenu = menu;
+        h.assertTrue(RefillSettings.locked(menu.filterSnapshot(), 1), "Snapshot carries the lock");
+        h.assertTrue(
+                menu.editFilter(
+                        player, FilterActions.SET_REFILL_SLOT_LOCK, 1, "locked", "false"),
+                "Resume request is accepted");
+        h.assertTrue(
+                !RefillSettings.locked(pouch, 1)
+                        && !RefillSettings.locked(menu.filterSnapshot(), 1),
+                "Lock is cleared on the pouch and in the snapshot");
+        h.assertTrue(
+                storage(pouch).getItem(1).is(Items.DIRT), "Pausing never touches the stack");
+        h.assertTrue(
+                menu.editFilter(player, FilterActions.SET_REFILL_SLOT_LOCK, 0, "locked", "true")
+                        && RefillSettings.locked(pouch, 0),
+                "The same request pauses another slot");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void anUnlockedSlotSuppliesAgain(GameTestHelper h) {
+        var player = h.makeMockPlayer(GameType.SURVIVAL);
+        var pouch = pouch(new ItemStack(Items.STONE, 12), new ItemStack(Items.DIRT));
+        assign(pouch, 1, 10);
+        RefillSettings.setLocked(pouch, 1, true);
+        var root = install(player, pouch);
+        h.assertTrue(
+                RefillDispatcher.tick(player) == 0
+                        && player.getInventory().getItem(10).isEmpty(),
+                "A locked slot supplies nothing");
+        edit(root, p -> RefillSettings.setLocked(p, 1, false));
+        h.assertTrue(
+                RefillDispatcher.tick(player) == 1
+                        && player.getInventory().getItem(10).is(Items.DIRT),
+                "The slot supplies again once unlocked");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void badPauseRequestsAreRejected(GameTestHelper h) {
+        var player = h.makeMockPlayer(GameType.SURVIVAL);
+        var pouch = pouch(new ItemStack(Items.STONE, 12), new ItemStack(Items.DIRT));
+        RefillSettings.setLocked(pouch, 1, true);
+        player.getInventory().setItem(0, pouch);
+        var menu = new BagMenu(61, player.getInventory(), storage(pouch), pouch, 0, false);
+        player.containerMenu = menu;
+        h.assertTrue(
+                !menu.editFilter(player, FilterActions.SET_REFILL_SLOT_LOCK, 9, "locked", "true")
+                        && !menu.editFilter(
+                                player, FilterActions.SET_REFILL_SLOT_LOCK, 1, "enabled", "true")
+                        && !menu.editFilter(
+                                player, FilterActions.SET_REFILL_SLOT_LOCK, 1, "locked", "yes"),
+                "Out-of-range, wrong field and bad values are rejected");
+        menu.setCarried(new ItemStack(Items.STONE));
+        h.assertTrue(
+                !menu.editFilter(player, FilterActions.SET_REFILL_SLOT_LOCK, 1, "locked", "true"),
+                "A held stack blocks the request");
+        h.assertTrue(RefillSettings.locked(pouch, 1), "Rejected requests keep the lock");
         h.succeed();
     }
 }

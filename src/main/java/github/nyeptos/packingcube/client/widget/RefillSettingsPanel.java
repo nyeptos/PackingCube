@@ -35,6 +35,8 @@ public final class RefillSettingsPanel {
 
         void toggleTargets();
 
+        void togglePause();
+
         /** Side-slot ids of the open menu; used only to decide slot numbering. */
         default List<String> sideIds() {
             return List.of();
@@ -227,6 +229,7 @@ public final class RefillSettingsPanel {
                                                         : "off")),
                         () -> set("trade", !RefillSettings.enabled(settings(), true)),
                         () -> RefillSettings.enabled(settings(), true));
+                full(4, () -> text("refill_pause_start"), access::togglePause, null);
             }
             default -> throw new IllegalStateException();
         }
