@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried loom that keeps its GUI contents inside the block stack. */
-public final class LoomStationMenu extends LoomMenu {
+public final class LoomStationMenu extends LoomMenu implements CarriedStationMenu {
     private final StationState state;
 
     public LoomStationMenu(

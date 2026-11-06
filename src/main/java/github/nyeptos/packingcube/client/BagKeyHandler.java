@@ -5,15 +5,18 @@ import com.mojang.blaze3d.platform.InputConstants;
 import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.gui.input.BagKeyActions;
 import github.nyeptos.packingcube.gui.input.BagKeyLatch;
+import github.nyeptos.packingcube.menu.station.CarriedStationMenu;
 import github.nyeptos.packingcube.network.OpenBigBagPayload;
 import github.nyeptos.packingcube.network.OpenEquippedBagPayload;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.Minecraft;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.network.PacketDistributor;
 
@@ -64,6 +67,20 @@ public final class BagKeyHandler {
             case DIRECT -> PacketDistributor.sendToServer(new OpenBigBagPayload());
             case NONE -> {}
         }
+    }
+
+    /**
+     * A vanilla screen swallows key mappings, so a station panel is read from the screen event.
+     * Only the radial key is handled here; the bag screens keep their own key handling.
+     */
+    @SubscribeEvent
+    public static void stationKeyPressed(ScreenEvent.KeyPressed.Pre event) {
+        if (!(event.getScreen() instanceof AbstractContainerScreen<?> screen)) return;
+        if (!(screen.getMenu() instanceof CarriedStationMenu)) return;
+        if (keyAction(event.getKeyCode(), event.getScanCode()) != BagKeyActions.Action.RADIAL)
+            return;
+        event.setCanceled(true);
+        PacketDistributor.sendToServer(new OpenEquippedBagPayload());
     }
 
     public static boolean sameBinding() {

@@ -58,7 +58,7 @@ public final class ModRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.LARGE_BAG.get())
                 .pattern("LLL")
                 .pattern("LCL")
-                .pattern(" PP")
+                .pattern(" P ")
                 .define('L', Items.LEATHER)
                 .define('C', Items.CHEST)
                 .define('P', ModItems.STORAGE_POUCH.get())

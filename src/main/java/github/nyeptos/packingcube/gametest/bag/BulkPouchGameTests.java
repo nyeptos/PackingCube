@@ -197,6 +197,59 @@ public final class BulkPouchGameTests {
     }
 
     @GameTest(template = "empty")
+    public static void aLeftClickHandsOutOneItem(GameTestHelper h) {
+        var player = h.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack stack = pouch();
+        BagInventory pouch = new BagInventory(stack, false, () -> {});
+        pouch.insert(new ItemStack(Items.COBBLESTONE, 300));
+        player.getInventory().setItem(0, stack);
+        var menu = new BagMenu(72, player.getInventory(), pouch, stack, 0, false);
+        player.containerMenu = menu;
+        menu.clicked(0, 0, ClickType.PICKUP, player);
+        h.assertTrue(
+                menu.getCarried().getCount() == 1, "carried " + menu.getCarried().getCount());
+        h.assertTrue(pouch.getItem(0).getCount() == 299, "left " + pouch.getItem(0).getCount());
+        menu.clicked(0, 0, ClickType.PICKUP, player);
+        h.assertTrue(menu.getCarried().getCount() == 2, "two left clicks carry two");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void aDoubleClickHandsOutOneItem(GameTestHelper h) {
+        var player = h.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack stack = pouch();
+        BagInventory pouch = new BagInventory(stack, false, () -> {});
+        pouch.insert(new ItemStack(Items.COBBLESTONE, 300));
+        player.getInventory().setItem(0, stack);
+        var menu = new BagMenu(76, player.getInventory(), pouch, stack, 0, false);
+        player.containerMenu = menu;
+        menu.clicked(0, 0, ClickType.PICKUP_ALL, player);
+        h.assertTrue(
+                menu.getCarried().getCount() == 1, "carried " + menu.getCarried().getCount());
+        h.assertTrue(pouch.getItem(0).getCount() == 299, "left " + pouch.getItem(0).getCount());
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void aRightClickHandsOutOneStack(GameTestHelper h) {
+        var player = h.makeMockPlayer(GameType.SURVIVAL);
+        ItemStack stack = pouch();
+        BagInventory pouch = new BagInventory(stack, false, () -> {});
+        pouch.insert(new ItemStack(Items.COBBLESTONE, 300));
+        player.getInventory().setItem(0, stack);
+        var menu = new BagMenu(74, player.getInventory(), pouch, stack, 0, false);
+        player.containerMenu = menu;
+        menu.clicked(0, 1, ClickType.PICKUP, player);
+        h.assertTrue(
+                menu.getCarried().getCount() == 64, "carried " + menu.getCarried().getCount());
+        h.assertTrue(pouch.getItem(0).getCount() == 236, "left " + pouch.getItem(0).getCount());
+        menu.clicked(0, 1, ClickType.PICKUP, player);
+        h.assertTrue(
+                pouch.getItem(0).getCount() == 236, "a full cursor takes nothing more");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
     public static void aNumberKeyHandsOutOneStack(GameTestHelper h) {
         var player = h.makeMockPlayer(GameType.SURVIVAL);
         ItemStack stack = pouch();

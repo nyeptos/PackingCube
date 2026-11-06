@@ -3,24 +3,24 @@
     "path": "textures/item/storage_pouch.png",
     "width": 16,
     "height": 16,
-    "sha256": "f7e4feced3ddd704286719a1153f348a20d0d6f883bf084a0ae378b922713bd3"
+    "sha256": "ca272385889724113e24f15db802c2ea5f4401342898994a2381ae4ab0354c18"
   },
   {
     "path": "textures/gui/radial/slot_pressed.png",
     "width": 36,
     "height": 36,
-    "sha256": "88c7af9ca052715d5cd2732666805021d692e42b992f63997d776ed7ecedab64"
+    "sha256": "dbff8519ce2c7612ddd3da799b379a65fabc06648718c05d9714a0a6d692adeb"
   },
   {
     "path": "textures/gui/radial/slot_hovered.png",
     "width": 36,
     "height": 36,
-    "sha256": "01dddf43ac6e8942d641eb42bc7f9b3bf1d6c9e28d658ef17735dd2e403c252b"
+    "sha256": "a85bcbc44a624c0e939c151861ea216383ecb1508e4550409da0ecd04a8d0782"
   },
   {
     "path": "textures/gui/radial/slot.png",
     "width": 36,
     "height": 36,
-    "sha256": "82c6d5262b8124f10c5886f73fa8544a0b26c182c8adcb2e6cd10eb73626e5e4"
+    "sha256": "7435996a637b97b08c8b8f31cfed7738748e9ee2e3c043f00147036890997c01"
   }
 ]

@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried anvil that keeps its GUI contents inside the block stack. */
-public final class AnvilStationMenu extends AnvilMenu {
+public final class AnvilStationMenu extends AnvilMenu implements CarriedStationMenu {
     private final StationState state;
 
     public AnvilStationMenu(

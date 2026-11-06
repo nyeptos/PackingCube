@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried smithing table that keeps its GUI contents inside the block stack. */
-public final class SmithingStationMenu extends SmithingMenu {
+public final class SmithingStationMenu extends SmithingMenu implements CarriedStationMenu {
     private final StationState state;
 
     public SmithingStationMenu(

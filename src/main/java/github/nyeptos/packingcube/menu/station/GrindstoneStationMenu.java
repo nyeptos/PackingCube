@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried grindstone that keeps its GUI contents inside the block stack. */
-public final class GrindstoneStationMenu extends GrindstoneMenu {
+public final class GrindstoneStationMenu extends GrindstoneMenu implements CarriedStationMenu {
     private final StationState state;
 
     public GrindstoneStationMenu(

@@ -14,7 +14,8 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried brewing stand that keeps brewing while its GUI is closed. */
-public final class BrewingStandStationMenu extends BrewingStandMenu implements StationOwner {
+public final class BrewingStandStationMenu extends BrewingStandMenu
+        implements StationOwner, CarriedStationMenu {
     private final StationBrewingStand station;
     private final UUID rootId;
     private final int moduleSlot;

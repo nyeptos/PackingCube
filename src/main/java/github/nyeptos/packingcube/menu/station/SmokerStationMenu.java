@@ -16,7 +16,8 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried smoker that keeps heating while its GUI is closed. */
-public final class SmokerStationMenu extends SmokerMenu implements StationOwner {
+public final class SmokerStationMenu extends SmokerMenu
+        implements StationOwner, CarriedStationMenu {
     private final StationFurnace station;
     private final UUID rootId;
     private final int moduleSlot;

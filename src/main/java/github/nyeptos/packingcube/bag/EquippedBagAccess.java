@@ -4,6 +4,7 @@ import github.nyeptos.packingcube.compat.BagEquipment;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.menu.BagMenuOpener;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
+import github.nyeptos.packingcube.menu.station.CarriedStationMenu;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.world.SimpleMenuProvider;
@@ -18,7 +19,8 @@ public final class EquippedBagAccess {
         return !player.level().isClientSide
                 && player.isAlive()
                 && !player.isSpectator()
-                && player.containerMenu == player.inventoryMenu
+                && (player.containerMenu == player.inventoryMenu
+                        || player.containerMenu instanceof CarriedStationMenu)
                 && player.containerMenu.getCarried().isEmpty();
     }
 

@@ -16,7 +16,8 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried blast furnace that keeps heating while its GUI is closed. */
-public final class BlastFurnaceStationMenu extends BlastFurnaceMenu implements StationOwner {
+public final class BlastFurnaceStationMenu extends BlastFurnaceMenu
+        implements StationOwner, CarriedStationMenu {
     private final StationFurnace station;
     private final UUID rootId;
     private final int moduleSlot;

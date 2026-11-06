@@ -15,7 +15,8 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried cartography table that keeps its GUI contents inside the block stack. */
-public final class CartographyStationMenu extends CartographyTableMenu {
+public final class CartographyStationMenu extends CartographyTableMenu
+        implements CarriedStationMenu {
     private final StationState state;
 
     public CartographyStationMenu(

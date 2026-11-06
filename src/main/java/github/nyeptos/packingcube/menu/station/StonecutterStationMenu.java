@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
 
 /** A carried stonecutter that keeps its GUI contents inside the block stack. */
-public final class StonecutterStationMenu extends StonecutterMenu {
+public final class StonecutterStationMenu extends StonecutterMenu implements CarriedStationMenu {
     private final StationState state;
 
     public StonecutterStationMenu(

@@ -574,7 +574,12 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
     public void clicked(int slotId, int button, ClickType type, Player player) {
         if (!player.level().isClientSide && !stillValid(player)) return;
         if (slotId >= visibleSlotCount() && slotId != bulkInputSlot && !isSideSlot(slotId)) return;
-        if (isBulk() && slotId == 0 && type == ClickType.SWAP && swapOneStackOut(player, button)) {
+        if (isBulk() && slotId == 0 && bulkHandOut(player, type, button)) {
+            // Handled here: a left click hands over one item, a right click one stack.
+        } else if (isBulk()
+                && slotId == 0
+                && type == ClickType.SWAP
+                && swapOneStackOut(player, button)) {
             // Handled here so the whole stored amount never leaves in one gesture.
         } else {
             super.clicked(slotId, button, type, player);
@@ -583,6 +588,45 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
             // Dropped or otherwise outside inventory/cursor: stop editing immediately.
             player.closeContainer();
         }
+    }
+
+    /**
+     * The output slot's own gestures: a left click hands over one item and a right click one
+     * stack. A double click counts as one more left click, so holding the button keeps the pace of
+     * the clicks instead of gathering a stack.
+     */
+    private boolean bulkHandOut(Player player, ClickType type, int button) {
+        if (type == ClickType.PICKUP_ALL) return handOutToCursor(1);
+        if (type != ClickType.PICKUP || (button != 0 && button != 1)) return false;
+        return handOutToCursor(button == 0 ? 1 : 0);
+    }
+
+    /**
+     * Moves the requested amount to the cursor; zero means one stack. The client runs this too, so
+     * the cursor and the stored count follow the click immediately instead of waiting for the
+     * round trip.
+     */
+    private boolean handOutToCursor(int requested) {
+        ItemStack stored = contents.getItem(0);
+        if (stored.isEmpty()) return true;
+        ItemStack carried = getCarried();
+        if (!carried.isEmpty() && !ItemStack.isSameItemSameComponents(carried, stored))
+            return false;
+        int cap = Math.max(1, stored.getMaxStackSize());
+        int room = cap - carried.getCount();
+        if (room <= 0) return true;
+        int wanted = requested <= 0 ? cap : requested;
+        int amount = Math.min(wanted, Math.min(room, stored.getCount()));
+        if (amount <= 0) return true;
+        setCarried(
+                carried.isEmpty()
+                        ? stored.copyWithCount(amount)
+                        : carried.copyWithCount(carried.getCount() + amount));
+        stored.shrink(amount);
+        if (stored.isEmpty()) contents.setItem(0, ItemStack.EMPTY);
+        else contents.setChanged();
+        broadcastChanges();
+        return true;
     }
 
     /**

@@ -4,6 +4,7 @@ import com.mojang.authlib.GameProfile;
 
 import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.bag.BagInventory;
+import github.nyeptos.packingcube.bag.EquippedBagAccess;
 import github.nyeptos.packingcube.bag.station.StationBlocks;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
 import github.nyeptos.packingcube.menu.CraftingStationMenu;
@@ -12,6 +13,7 @@ import github.nyeptos.packingcube.bag.station.StationTicker;
 import github.nyeptos.packingcube.menu.station.AnvilStationMenu;
 import github.nyeptos.packingcube.menu.station.BlastFurnaceStationMenu;
 import github.nyeptos.packingcube.menu.station.BrewingStandStationMenu;
+import github.nyeptos.packingcube.menu.station.CarriedStationMenu;
 import github.nyeptos.packingcube.menu.station.FurnaceStationMenu;
 import github.nyeptos.packingcube.menu.station.CartographyStationMenu;
 import github.nyeptos.packingcube.menu.station.GrindstoneStationMenu;
@@ -28,7 +30,10 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ChestMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
@@ -85,6 +90,39 @@ public final class StationMenuGameTests {
             containerMenu = provider.createMenu(id, getInventory(), this);
             return OptionalInt.of(id);
         }
+
+        @Override
+        public OptionalInt openMenu(MenuProvider provider) {
+            int id = ++nextId;
+            containerMenu = provider.createMenu(id, getInventory(), this);
+            return OptionalInt.of(id);
+        }
+    }
+
+    @GameTest(template = "empty")
+    public static void theRadialKeyWorksWhileAStationIsOpen(GameTestHelper h) {
+        var p = new StationPlayer(h);
+        var root = bagWith(StationBlocks.Kind.FURNACE);
+        p.getInventory().setItem(0, root);
+        openStation(h, p, root);
+        h.assertTrue(
+                p.containerMenu instanceof CarriedStationMenu, "A carried station panel is open");
+        h.assertTrue(EquippedBagAccess.open(p), "The radial opens over a station panel");
+        h.assertTrue(
+                p.containerMenu instanceof BagRadialMenu, "The wheel replaced the station panel");
+        h.succeed();
+    }
+
+    @GameTest(template = "empty")
+    public static void aBorrowedBlockPanelStillRefusesTheRadial(GameTestHelper h) {
+        var p = new StationPlayer(h);
+        p.getInventory().setItem(0, bagWith(StationBlocks.Kind.FURNACE));
+        p.containerMenu =
+                new ChestMenu(
+                        MenuType.GENERIC_9x1, 90, p.getInventory(), new SimpleContainer(9), 1);
+        h.assertTrue(
+                !EquippedBagAccess.open(p), "A placed container still refuses the radial key");
+        h.succeed();
     }
 
     private static ItemStack bagWith(StationBlocks.Kind kind) {

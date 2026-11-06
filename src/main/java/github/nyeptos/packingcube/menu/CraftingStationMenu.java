@@ -2,6 +2,7 @@ package github.nyeptos.packingcube.menu;
 
 import github.nyeptos.packingcube.bag.BagSounds;
 import github.nyeptos.packingcube.bag.station.StationStorage;
+import github.nyeptos.packingcube.menu.station.CarriedStationMenu;
 import github.nyeptos.packingcube.registry.ModMenus;
 
 import net.minecraft.core.NonNullList;
@@ -36,7 +37,8 @@ import java.util.UUID;
  * The 3x3 grid of a crafting table carried in a module slot. The grid is stored on the block
  * stack itself, so the table keeps its contents while it moves in and out of the bag.
  */
-public final class CraftingStationMenu extends AbstractContainerMenu {
+public final class CraftingStationMenu extends AbstractContainerMenu
+        implements CarriedStationMenu {
     public static final int RESULT_SLOT = 0;
     private static final int GRID_SIZE = 9;
     private static final int INV_SLOT_START = 10;
