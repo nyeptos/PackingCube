@@ -29,7 +29,7 @@ public final class EquippedBagAccess {
         if (!equipped.isEmpty()) return equipped.getFirst();
         for (int slot = 0; slot < 36; slot++) {
             ItemStack candidate = player.getInventory().getItem(slot);
-            if (candidate.is(ModItems.LARGE_BAG.get()) && candidate.getCount() == 1)
+            if (candidate.is(ModItems.BACKPACK.get()) && candidate.getCount() == 1)
                 return candidate;
         }
         return ItemStack.EMPTY;
@@ -60,7 +60,7 @@ public final class EquippedBagAccess {
         }
         // stillValid rebinds a copied/moved root before we read it. Always prefer this parent.
         ItemStack root = menu.rootBag();
-        if (!root.is(ModItems.LARGE_BAG.get())) root = primaryBag(player);
+        if (!root.is(ModItems.BACKPACK.get())) root = primaryBag(player);
         return radial ? openRadial(player, root) : openManagement(player, root);
     }
 

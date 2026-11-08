@@ -76,7 +76,7 @@ public final class CraftingStationGameTests {
     }
 
     private static ItemStack bagWithTable(int moduleSlot) {
-        ItemStack root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        ItemStack root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {})
                 .setItem(moduleSlot, new ItemStack(Items.CRAFTING_TABLE));
         return root;

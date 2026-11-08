@@ -1,0 +1,19 @@
+{
+  "type": "packingcube:pouch",
+  "materials": [
+    {
+      "count": 5,
+      "item": "minecraft:leather"
+    },
+    {
+      "count": 2,
+      "item": "packingcube:storage_pouch"
+    },
+    {
+      "count": 1,
+      "item": "minecraft:chest"
+    }
+  ],
+  "order": 40,
+  "result": "packingcube:backpack"
+}

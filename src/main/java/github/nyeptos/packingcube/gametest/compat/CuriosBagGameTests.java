@@ -63,7 +63,7 @@ public final class CuriosBagGameTests {
     }
 
     private static ItemStack bag() {
-        return ModItems.LARGE_BAG.get().getDefaultInstance();
+        return ModItems.BACKPACK.get().getDefaultInstance();
     }
 
     private static BagInventory modules(ItemStack stack) {
@@ -746,7 +746,7 @@ public final class CuriosBagGameTests {
         back(p).setStackInSlot(0, root);
         RefillOpeningGameTests.assertAllRulesAndReassignment(h, p, root);
         h.assertTrue(
-                back(p).getStackInSlot(0).is(ModItems.LARGE_BAG.get()),
+                back(p).getStackInSlot(0).is(ModItems.BACKPACK.get()),
                 "Worn owning backpack remains equipped");
         h.succeed();
     }

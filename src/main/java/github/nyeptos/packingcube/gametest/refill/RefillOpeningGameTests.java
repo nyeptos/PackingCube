@@ -152,7 +152,7 @@ public final class RefillOpeningGameTests {
     public static void carriedBackpackRealOpenerSupportsAllSourcesAndReassignment(
             GameTestHelper h) {
         var p = new OpeningPlayer(h);
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {}).setItem(0, filledPouch());
         p.getInventory().setItem(0, root);
         assertAllRulesAndReassignment(h, p, root);

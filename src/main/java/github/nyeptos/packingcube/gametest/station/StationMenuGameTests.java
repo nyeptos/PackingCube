@@ -126,7 +126,7 @@ public final class StationMenuGameTests {
     }
 
     private static ItemStack bagWith(StationBlocks.Kind kind) {
-        ItemStack root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        ItemStack root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {}).setItem(0, new ItemStack(kind.item()));
         return root;
     }

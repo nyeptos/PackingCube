@@ -45,7 +45,7 @@ public final class StationStorage {
     public static ItemStack root(Player player, UUID rootId) {
         return BagIdentity.findUnique(
                 player,
-                stack -> stack.is(ModItems.LARGE_BAG.get()) && BagIdentity.matches(stack, rootId),
+                stack -> stack.is(ModItems.BACKPACK.get()) && BagIdentity.matches(stack, rootId),
                 ItemStack.EMPTY);
     }
 }

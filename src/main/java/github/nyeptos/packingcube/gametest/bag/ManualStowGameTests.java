@@ -51,7 +51,7 @@ public final class ManualStowGameTests {
     }
 
     private static ItemStack install(Player player, ItemStack... pouches) {
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         var parent = modules(root);
         for (int i = 0; i < pouches.length; i++) parent.setItem(i, pouches[i]);
         player.getInventory().setItem(0, root);
@@ -152,7 +152,7 @@ public final class ManualStowGameTests {
             GameTestHelper h) {
         var player = player(h);
         var target = install(player, pouch(0));
-        var other = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var other = ModItems.BACKPACK.get().getDefaultInstance();
         modules(other).setItem(0, pouch(9));
         player.getInventory().setItem(1, other);
         var loose = pouch(9);
@@ -308,7 +308,7 @@ public final class ManualStowGameTests {
                         && player.getInventory().getItem(9).getCount() == 64
                         && count(root, 0) == 576,
                 "Full destinations never delete creative overflow");
-        var emptyRoot = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var emptyRoot = ModItems.BACKPACK.get().getDefaultInstance();
         player.getInventory().setItem(0, emptyRoot);
         var emptyMenu = open(player, emptyRoot);
         h.assertTrue(

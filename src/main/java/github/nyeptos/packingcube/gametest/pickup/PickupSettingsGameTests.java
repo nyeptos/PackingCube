@@ -30,7 +30,7 @@ public final class PickupSettingsGameTests {
     }
 
     private static ItemStack backpack() {
-        return ModItems.LARGE_BAG.get().getDefaultInstance();
+        return ModItems.BACKPACK.get().getDefaultInstance();
     }
 
     private static ItemStack pouch(int priority) {

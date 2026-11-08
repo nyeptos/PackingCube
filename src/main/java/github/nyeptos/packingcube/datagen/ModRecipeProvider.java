@@ -1,6 +1,6 @@
 package github.nyeptos.packingcube.datagen;
 
-import github.nyeptos.packingcube.registry.ModItems;
+import github.nyeptos.packingcube.registry.ModBlocks;
 
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
@@ -8,13 +8,14 @@ import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.Items;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Crafting costs for the three bags. A pouch is the cheaper entry point, and the backpack asks
- * for pouches so the pouch work carries over.
+ * The table's own costs: the station, and nothing else. The pouches and the backpack are the
+ * station's bills, so no table recipe may ask for one of them.
  */
 public final class ModRecipeProvider extends RecipeProvider {
     public ModRecipeProvider(
@@ -24,45 +25,18 @@ public final class ModRecipeProvider extends RecipeProvider {
 
     @Override
     protected void buildRecipes(RecipeOutput output) {
-        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.STORAGE_POUCH.get())
-                .pattern("SLS")
-                .pattern("LCL")
-                .pattern(" L ")
-                .define('S', Items.STRING)
-                .define('L', Items.LEATHER)
-                .define('C', Items.CHEST)
-                .unlockedBy("has_chest", has(Items.CHEST))
-                .save(output);
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.REFILL_POUCH.get())
-                .pattern("IHI")
-                .pattern(" P ")
-                .pattern(" R ")
-                .define('I', Items.IRON_INGOT)
-                .define('H', Items.HOPPER)
-                .define('P', ModItems.STORAGE_POUCH.get())
-                .define('R', Items.REDSTONE)
-                .unlockedBy("has_storage_pouch", has(ModItems.STORAGE_POUCH.get()))
-                .save(output);
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.BULK_POUCH.get())
-                .pattern("ICI")
-                .pattern("CPC")
-                .pattern("ICI")
-                .define('I', Items.IRON_INGOT)
-                .define('C', Items.CHEST)
-                .define('P', ModItems.STORAGE_POUCH.get())
-                .unlockedBy("has_storage_pouch", has(ModItems.STORAGE_POUCH.get()))
-                .save(output);
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.LARGE_BAG.get())
+        // No pouch here: the station is what makes pouches, so it must not ask for one.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.POUCH_STATION_ITEM.get())
                 .pattern("LLL")
-                .pattern("LCL")
-                .pattern(" P ")
+                .pattern("PTP")
+                .pattern("CCC")
                 .define('L', Items.LEATHER)
-                .define('C', Items.CHEST)
-                .define('P', ModItems.STORAGE_POUCH.get())
-                .unlockedBy("has_storage_pouch", has(ModItems.STORAGE_POUCH.get()))
+                .define('P', ItemTags.PLANKS)
+                .define('T', Items.CRAFTING_TABLE)
+                .define('C', Items.COBBLESTONE)
+                .unlockedBy("has_leather", has(Items.LEATHER))
                 .save(output);
+
+        PouchRecipeData.write(output);
     }
 }

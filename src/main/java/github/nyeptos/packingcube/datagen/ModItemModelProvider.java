@@ -1,6 +1,7 @@
 package github.nyeptos.packingcube.datagen;
 
 import github.nyeptos.packingcube.PackingCube;
+import github.nyeptos.packingcube.registry.ModBlocks;
 import github.nyeptos.packingcube.registry.ModItems;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -20,12 +21,16 @@ public final class ModItemModelProvider extends ItemModelProvider {
         // Share the artist's geometry/UV with the equipped model, without modifying its poses.
         // Keep display transforms in the Blockbench-authored parent, not in this wrapper.
         withExistingParent(
-                BuiltInRegistries.ITEM.getKey(ModItems.LARGE_BAG.get()).getPath(),
+                BuiltInRegistries.ITEM.getKey(ModItems.BACKPACK.get()).getPath(),
                 modLoc("item/backpack_equipped"));
         // Use the artist-supplied pouch icon in inventory and radial menus.
         flatItem(ModItems.STORAGE_POUCH.get(), modLoc("item/storage_pouch"));
         flatItem(ModItems.REFILL_POUCH.get(), modLoc("item/refill_pouch"));
         flatItem(ModItems.BULK_POUCH.get(), modLoc("item/bulk_pouch"));
+        // The station item is the block itself, so it borrows the block model.
+        withExistingParent(
+                BuiltInRegistries.ITEM.getKey(ModBlocks.POUCH_STATION_ITEM.get()).getPath(),
+                modLoc("block/pouch_station"));
         // For a new mod texture at textures/item/<id>.png: basicItem(ModItems.YOUR_ITEM.get());
     }
 

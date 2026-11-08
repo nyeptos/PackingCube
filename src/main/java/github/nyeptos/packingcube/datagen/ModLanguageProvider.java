@@ -28,7 +28,7 @@ public final class ModLanguageProvider extends LanguageProvider {
     @Override
     protected void addTranslations() {
         translated("itemGroup.packingcube", "PackingCube", "PackingCube");
-        translated("item.packingcube.large_bag", "Backpack", "バックパック");
+        translated("item.packingcube.backpack", "Backpack", "バックパック");
         translated("item.packingcube.storage_pouch", "Storage Pouch", "収納ポーチ");
         translated("item.packingcube.bulk_pouch", "Bulk Pouch", "バルクポーチ");
         translated(
@@ -503,6 +503,21 @@ public final class ModLanguageProvider extends LanguageProvider {
                 "tooltip.packingcube.filter_include",
                 "Filter: Include (store matching items)",
                 "フィルター: 含む（一致するものを収納）");
+        translated("block.packingcube.pouch_station", "Pouch Workbench", "ポーチ製作台");
+        translated("gui.packingcube.pouch_station.need", "Needs", "必要素材");
+        translated("gui.packingcube.pouch_station.ready", "Ready", "素材OK");
+        translated("gui.packingcube.pouch_station.missing", "Short of materials", "素材不足");
+        translated("gui.packingcube.pouch_station.craft", "Craft", "製作");
+        translated("gui.packingcube.pouch_station.result", "Result", "完成品");
+        translated("gui.packingcube.pouch_station.need_held", "Have / Need", "所持/必要");
+        translated(
+                "gui.packingcube.pouch_station.from_inventory",
+                "Materials come from your inventory",
+                "素材はインベントリから使います");
+        translated(
+                "gui.packingcube.pouch_station.craft_hint",
+                "Press Craft to make this pouch",
+                "製作ボタンでこのポーチを作ります");
         translated(
                 "tooltip.packingcube.filter_exclude",
                 "Filter: Exclude (reject matching items)",

@@ -36,7 +36,7 @@ public final class RefillScreenGameTests {
     }
 
     private static ItemStack backpack(ItemStack module) {
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         if (!module.isEmpty()) new BagInventory(root, true, () -> {}).setItem(0, module);
         return root;
     }

@@ -490,7 +490,7 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
         if (!(contents instanceof BagInventory storage)) return;
         ItemStack snapshot =
                 (modules
-                                ? ModItems.LARGE_BAG
+                                ? ModItems.BACKPACK
                                 : refill
                                         ? ModItems.REFILL_POUCH
                                         : storage.bagStack().is(ModItems.BULK_POUCH.get())
@@ -530,7 +530,7 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
                 || player.isSpectator()
                 || rootStorage == null
                 || contents != rootStorage
-                || !root.is(ModItems.LARGE_BAG.get())
+                || !root.is(ModItems.BACKPACK.get())
                 || !getCarried().isEmpty()
                 || !stillValid(player)) return -1;
         int moved = 0;
@@ -743,7 +743,7 @@ public final class BagMenu extends AbstractContainerMenu implements BagRootMenu 
             if (!moveItemStackTo(stack, bagSlots, visibleSlotCount(), true)) return ItemStack.EMPTY;
         } else {
             // An empty matching equipment/Curios slot wins over the bag. An occupied slot is never
-            // swapped out, so full equipment set falls through to the normal bag stow.
+            // swapped out, so a full equipment set falls through to the normal bag stow.
             equipIntoEmptySideSlot(stack);
             if (!stack.isEmpty() && isBulk()) absorbBulk(stack);
             // Vanilla's merge-into-existing-stacks path does not call Slot.mayPlace.

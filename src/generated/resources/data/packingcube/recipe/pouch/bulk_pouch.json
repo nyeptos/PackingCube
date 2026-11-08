@@ -1,0 +1,19 @@
+{
+  "type": "packingcube:pouch",
+  "materials": [
+    {
+      "count": 4,
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "count": 4,
+      "item": "minecraft:chest"
+    },
+    {
+      "count": 1,
+      "item": "packingcube:storage_pouch"
+    }
+  ],
+  "order": 30,
+  "result": "packingcube:bulk_pouch"
+}

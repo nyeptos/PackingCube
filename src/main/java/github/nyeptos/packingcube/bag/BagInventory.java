@@ -117,7 +117,7 @@ public final class BagInventory extends SimpleContainer {
     }
 
     public static boolean isBag(ItemStack stack) {
-        return stack.is(ModItems.LARGE_BAG.get()) || isPouch(stack);
+        return stack.is(ModItems.BACKPACK.get()) || isPouch(stack);
     }
 
     /**

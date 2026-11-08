@@ -4,6 +4,7 @@ import github.nyeptos.packingcube.PackingCube;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
 import github.nyeptos.packingcube.menu.CraftingStationMenu;
+import github.nyeptos.packingcube.menu.PouchStationMenu;
 import github.nyeptos.packingcube.menu.station.AnvilStationMenu;
 import github.nyeptos.packingcube.menu.station.BlastFurnaceStationMenu;
 import github.nyeptos.packingcube.menu.station.BrewingStandStationMenu;
@@ -34,6 +35,12 @@ public final class ModMenus {
                     "bag_radial",
                     () -> new MenuType<>(BagRadialMenu::new, FeatureFlags.DEFAULT_FLAGS));
 
+
+    public static final DeferredHolder<MenuType<?>, MenuType<PouchStationMenu>>
+            POUCH_STATION_MENU =
+                    MENUS.register(
+                            "pouch_station",
+                            () -> IMenuTypeExtension.create(PouchStationMenu::fromNetwork));
 
     // Carried stations: one menu per block kind so the vanilla panel logic is reused unchanged.
     public static final DeferredHolder<MenuType<?>, MenuType<CraftingStationMenu>>

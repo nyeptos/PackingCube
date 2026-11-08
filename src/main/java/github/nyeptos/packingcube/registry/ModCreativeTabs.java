@@ -19,13 +19,14 @@ public final class ModCreativeTabs {
                     () ->
                             CreativeModeTab.builder()
                                     .title(Component.translatable("itemGroup.packingcube"))
-                                    .icon(() -> ModItems.LARGE_BAG.get().getDefaultInstance())
+                                    .icon(() -> ModItems.BACKPACK.get().getDefaultInstance())
                                     .displayItems(
                                             (parameters, output) -> {
-                                                output.accept(ModItems.LARGE_BAG.get());
+                                                output.accept(ModItems.BACKPACK.get());
                                                 output.accept(ModItems.STORAGE_POUCH.get());
                                                 output.accept(ModItems.REFILL_POUCH.get());
                                                 output.accept(ModItems.BULK_POUCH.get());
+                                                output.accept(ModBlocks.POUCH_STATION_ITEM.get());
                                             })
                                     .build());
 

@@ -39,7 +39,7 @@ public final class BagRouter {
      */
     public static ItemStack routeManual(BagInventory parent, ItemStack incoming) {
         ItemStack remainder = incoming.copy();
-        if (!parent.bagStack().is(ModItems.LARGE_BAG.get())
+        if (!parent.bagStack().is(ModItems.BACKPACK.get())
                 || remainder.isEmpty()
                 || BagInventory.isBag(remainder)) return remainder;
         List<Destination> destinations = new ArrayList<>();
@@ -66,7 +66,7 @@ public final class BagRouter {
     private static void collect(
             Player player, ItemStack carrier, ItemStack incoming, List<Destination> destinations) {
         // Legacy backpack enabled flags are intentionally ignored; only pouches have switches.
-        if (!carrier.is(ModItems.LARGE_BAG.get())) return;
+        if (!carrier.is(ModItems.BACKPACK.get())) return;
         // A screen owns its live parent view. Do not create a second writer, even for an open
         // pouch.
         if (player.containerMenu instanceof BagRootMenu menu && menu.ownsRoot(carrier)) return;

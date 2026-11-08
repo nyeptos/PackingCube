@@ -78,7 +78,7 @@ public final class BagRadialMenu extends AbstractContainerMenu implements BagRoo
 
     @Override
     public boolean ownsRoot(ItemStack stack) {
-        return stack.is(ModItems.LARGE_BAG.get()) && BagIdentity.matches(stack, rootId);
+        return stack.is(ModItems.BACKPACK.get()) && BagIdentity.matches(stack, rootId);
     }
 
     private ItemStack findRoot(Player player) {

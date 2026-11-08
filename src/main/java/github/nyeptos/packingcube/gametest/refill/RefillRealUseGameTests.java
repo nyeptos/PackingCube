@@ -44,7 +44,7 @@ public final class RefillRealUseGameTests {
     private static ItemStack install(Actor p, ItemStack contents) {
         var supply = LegacyRefillFixture.pouch();
         new BagInventory(supply, false, () -> {}).setItem(0, contents);
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {}).setItem(0, supply);
         p.getInventory().setItem(8, root);
         p.getInventory().selected = 0;

@@ -31,7 +31,7 @@ public final class RefillSupply {
         List<ItemStack> roots = new ArrayList<>(BagEquipment.activeBackBags(player));
         for (int i = 0; i < 36; i++) roots.add(player.getInventory().getItem(i));
         for (var root : roots) {
-            if (!root.is(ModItems.LARGE_BAG.get()) || root.getCount() != 1 || !seen.add(root))
+            if (!root.is(ModItems.BACKPACK.get()) || root.getCount() != 1 || !seen.add(root))
                 continue;
             if (player.containerMenu instanceof BagRootMenu menu && menu.ownsRoot(root)) continue;
             var parent = new BagInventory(root, true, player.getInventory()::setChanged);

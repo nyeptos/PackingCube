@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "packingcube:block/pouch_station"
+    }
+  }
+}

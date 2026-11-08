@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "packingcube:block/pouch_station_top",
+    "side": "packingcube:block/pouch_station_side",
+    "bottom": "packingcube:block/pouch_station_bottom"
+  }
+}

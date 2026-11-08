@@ -74,7 +74,7 @@ public final class BackpackAppearanceGameTests {
             throws Exception {
         try (var reader =
                 new InputStreamReader(
-                        resource("models/item/large_bag.json"), StandardCharsets.UTF_8)) {
+                        resource("models/item/backpack.json"), StandardCharsets.UTF_8)) {
             var item = JsonParser.parseReader(reader).getAsJsonObject();
             h.assertTrue(
                     item.get("parent").getAsString().equals("packingcube:item/backpack_equipped"),

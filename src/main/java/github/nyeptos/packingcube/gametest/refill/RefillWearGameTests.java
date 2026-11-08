@@ -33,7 +33,7 @@ public final class RefillWearGameTests {
     }
 
     private static ItemStack install(Player player, ItemStack pouch) {
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {}).setItem(0, pouch);
         player.getInventory().setItem(8, root);
         return root;
@@ -156,7 +156,7 @@ public final class RefillWearGameTests {
     public static void theModeFromThePanelWaitsForTheLimit(GameTestHelper h) {
         var player = new RefillOpeningGameTests.OpeningPlayer(h);
         var pouch = pouch(pickaxe(0));
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {}).setItem(0, pouch);
         player.getInventory().setItem(0, root);
         var radial = new BagRadialMenu(70, player.getInventory(), root);
@@ -207,7 +207,7 @@ public final class RefillWearGameTests {
     public static void theLimitStillWaitsWithThePanelOpen(GameTestHelper h) {
         var player = new RefillOpeningGameTests.OpeningPlayer(h);
         var pouch = pouch(pickaxe(0));
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {}).setItem(0, pouch);
         player.getInventory().setItem(0, root);
         var radial = new BagRadialMenu(70, player.getInventory(), root);

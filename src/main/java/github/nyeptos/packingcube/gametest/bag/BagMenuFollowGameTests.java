@@ -37,12 +37,12 @@ public final class BagMenuFollowGameTests {
                 menu.getSlot(36).mayPickup(player), "Opened bag is no longer slot-locked");
         menu.clicked(36, 0, ClickType.PICKUP, player);
         helper.assertTrue(
-                menu.getCarried().is(ModItems.LARGE_BAG.get()), "Bag can be held on cursor");
+                menu.getCarried().is(ModItems.BACKPACK.get()), "Bag can be held on cursor");
         helper.assertTrue(menu.stillValid(player), "Cursor is a valid bag location");
         menu.clicked(37, 0, ClickType.PICKUP, player);
         helper.assertTrue(
                 menu.getCarried().isEmpty()
-                        && player.getInventory().getItem(1).is(ModItems.LARGE_BAG.get()),
+                        && player.getInventory().getItem(1).is(ModItems.BACKPACK.get()),
                 "Bag can be placed in a different inventory slot");
         helper.assertTrue(menu.stillValid(player), "Moving must not close the bag");
         modules.setItem(1, filter());

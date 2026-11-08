@@ -28,7 +28,7 @@ public final class StationTicker {
         List<ItemStack> roots = new ArrayList<>(BagEquipment.activeBackBags(player));
         for (int i = 0; i < 36; i++) roots.add(player.getInventory().getItem(i));
         for (ItemStack root : roots) {
-            if (!root.is(ModItems.LARGE_BAG.get()) || root.getCount() != 1 || !seen.add(root))
+            if (!root.is(ModItems.BACKPACK.get()) || root.getCount() != 1 || !seen.add(root))
                 continue;
             List<ItemStack> modules =
                     root.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY)

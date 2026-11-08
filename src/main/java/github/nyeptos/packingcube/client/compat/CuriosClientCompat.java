@@ -23,6 +23,6 @@ public final class CuriosClientCompat {
     }
 
     public static void registerRenderer() {
-        CuriosRendererRegistry.register(ModItems.LARGE_BAG.get(), CuriosBackpackRenderer::new);
+        CuriosRendererRegistry.register(ModItems.BACKPACK.get(), CuriosBackpackRenderer::new);
     }
 }

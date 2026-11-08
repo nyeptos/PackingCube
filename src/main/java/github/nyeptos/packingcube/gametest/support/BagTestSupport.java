@@ -16,7 +16,7 @@ public final class BagTestSupport {
     }
 
     public static ItemStack carrier() {
-        return ModItems.LARGE_BAG.get().getDefaultInstance();
+        return ModItems.BACKPACK.get().getDefaultInstance();
     }
 
     public static ResourceLocation id(String path) {

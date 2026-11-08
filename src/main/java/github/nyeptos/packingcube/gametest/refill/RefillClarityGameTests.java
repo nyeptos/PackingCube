@@ -82,7 +82,7 @@ public final class RefillClarityGameTests {
                 "Missing installed/enabled pouch explained");
         var supply = LegacyRefillFixture.pouch();
         new BagInventory(supply, false, () -> {}).setItem(0, new ItemStack(Items.STONE, 8));
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {}).setItem(0, supply);
         p.getInventory().setItem(8, root);
         h.assertTrue(

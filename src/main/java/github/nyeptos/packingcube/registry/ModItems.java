@@ -15,8 +15,8 @@ public final class ModItems {
     private static final DeferredRegister.Items ITEMS =
             DeferredRegister.createItems(PackingCube.MODID);
 
-    public static final DeferredItem<BagItem> LARGE_BAG =
-            ITEMS.register("large_bag", () -> new BagItem(true, new Item.Properties().stacksTo(1)));
+    public static final DeferredItem<BagItem> BACKPACK =
+            ITEMS.register("backpack", () -> new BagItem(true, new Item.Properties().stacksTo(1)));
     public static final DeferredItem<BagItem> STORAGE_POUCH =
             ITEMS.register(
                     "storage_pouch", () -> new BagItem(false, new Item.Properties().stacksTo(1)));
@@ -43,12 +43,22 @@ public final class ModItems {
     private static final ResourceLocation LEGACY_STORAGE_POUCH =
             ResourceLocation.fromNamespaceAndPath(PackingCube.MODID, "filter_bag");
 
+    /**
+     * The backpack was registered as {@code packingcube:large_bag} before PC-135. The alias keeps
+     * saved inventories, bag contents and datapack references resolving to the renamed item.
+     */
+    private static final ResourceLocation LEGACY_BACKPACK =
+            ResourceLocation.fromNamespaceAndPath(PackingCube.MODID, "large_bag");
+
     private ModItems() {}
 
     public static void register(IEventBus bus) {
         ITEMS.addAlias(
                 LEGACY_STORAGE_POUCH,
                 ResourceLocation.fromNamespaceAndPath(PackingCube.MODID, "storage_pouch"));
+        ITEMS.addAlias(
+                LEGACY_BACKPACK,
+                ResourceLocation.fromNamespaceAndPath(PackingCube.MODID, "backpack"));
         ITEMS.register(bus);
     }
 }

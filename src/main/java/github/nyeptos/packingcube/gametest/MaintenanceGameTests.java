@@ -108,7 +108,7 @@ public final class MaintenanceGameTests {
     @GameTest(template = "empty")
     public static void registrySplitPreservesAllExistingIds(GameTestHelper helper) {
         helper.assertTrue(
-                BuiltInRegistries.ITEM.getKey(ModItems.LARGE_BAG.get()).equals(id("large_bag")),
+                BuiltInRegistries.ITEM.getKey(ModItems.BACKPACK.get()).equals(id("backpack")),
                 "Big Bag ID unchanged");
         helper.assertTrue(
                 BuiltInRegistries.ITEM
@@ -146,7 +146,7 @@ public final class MaintenanceGameTests {
     @GameTest(template = "empty")
     public static void registryDefaultsRemainUnchanged(GameTestHelper helper) {
         for (var item :
-                java.util.List.of(ModItems.LARGE_BAG, ModItems.STORAGE_POUCH, ModItems.REFILL_POUCH)) {
+                java.util.List.of(ModItems.BACKPACK, ModItems.STORAGE_POUCH, ModItems.REFILL_POUCH)) {
             helper.assertTrue(
                     item.get().getDefaultInstance().getMaxStackSize() == 1,
                     "All bags remain unstackable");
@@ -165,7 +165,7 @@ public final class MaintenanceGameTests {
     @GameTest(template = "empty")
     public static void allBigBagOpenRoutesPlayLeatherExactlyOnce(GameTestHelper helper) {
         var player = new RecordingPlayer(helper);
-        ItemStack root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        ItemStack root = ModItems.BACKPACK.get().getDefaultInstance();
         var contents = new BagInventory(root, true, () -> {});
         contents.setItem(0, ModItems.STORAGE_POUCH.get().getDefaultInstance());
         player.getInventory().setItem(0, root);
@@ -210,7 +210,7 @@ public final class MaintenanceGameTests {
     @GameTest(template = "empty")
     public static void rejectedAndFilterOpensHaveNoBigBagSound(GameTestHelper helper) {
         var player = new RecordingPlayer(helper);
-        ItemStack root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        ItemStack root = ModItems.BACKPACK.get().getDefaultInstance();
         player.getInventory().setItem(0, root);
         player.rejectMenus = true;
         helper.assertFalse(EquippedBagAccess.openDirect(player), "Failed menu open rejected");

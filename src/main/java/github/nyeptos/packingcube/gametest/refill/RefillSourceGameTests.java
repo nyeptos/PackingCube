@@ -41,7 +41,7 @@ public final class RefillSourceGameTests {
     }
 
     private static ItemStack install(Player player, ItemStack pouch) {
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         new BagInventory(root, true, () -> {}).setItem(0, pouch);
         player.getInventory().setItem(8, root);
         return root;

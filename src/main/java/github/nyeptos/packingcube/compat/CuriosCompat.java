@@ -55,7 +55,7 @@ final class CuriosCompat {
                                 return context.identifier().equals("back") && !context.cosmetic();
                             }
                         },
-                ModItems.LARGE_BAG.get());
+                ModItems.BACKPACK.get());
     }
 
     static List<BagEquipment.Target> refillTargets(Player player) {
@@ -217,7 +217,7 @@ final class CuriosCompat {
             ItemStack stack = stacks.getStackInSlot(slot);
             if (inventory.isSlotActive("back", slot)
                     && stack.getCount() == 1
-                    && stack.is(ModItems.LARGE_BAG.get())) {
+                    && stack.is(ModItems.BACKPACK.get())) {
                 result.add(stack);
             }
         }

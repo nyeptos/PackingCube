@@ -3,6 +3,7 @@ package github.nyeptos.packingcube.network;
 import github.nyeptos.packingcube.bag.EquippedBagAccess;
 import github.nyeptos.packingcube.menu.BagMenu;
 import github.nyeptos.packingcube.menu.BagRadialMenu;
+import github.nyeptos.packingcube.menu.PouchStationMenu;
 
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
@@ -15,6 +16,29 @@ public final class ModNetworking {
         registerOpening(registrar);
         registerRadial(registrar);
         registerBagActions(registrar);
+        registerPouchStation(registrar);
+    }
+
+    /** The pouch station screen only asks; every check happens on the server side. */
+    private static void registerPouchStation(PayloadRegistrar registrar) {
+        registrar.playToServer(
+                PouchStationActionPayload.TYPE,
+                PouchStationActionPayload.STREAM_CODEC,
+                (payload, context) ->
+                        context.enqueueWork(
+                                () -> {
+                                    var player = context.player();
+                                    if (!(player.containerMenu instanceof PouchStationMenu menu))
+                                        return;
+                                    if (menu.containerId != payload.containerId()) return;
+                                    switch (payload.action()) {
+                                        case PouchStationActionPayload.ACTION_SELECT ->
+                                                menu.select(payload.value());
+                                        case PouchStationActionPayload.ACTION_CRAFT ->
+                                                menu.craft(player);
+                                        default -> {}
+                                    }
+                                }));
     }
 
     /** Opening the equipped bag, the big bag, and the moves between the two screens. */

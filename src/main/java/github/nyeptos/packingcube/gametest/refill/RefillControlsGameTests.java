@@ -60,7 +60,7 @@ public final class RefillControlsGameTests {
     }
 
     private static ItemStack install(Player p, ItemStack... pouches) {
-        var root = ModItems.LARGE_BAG.get().getDefaultInstance();
+        var root = ModItems.BACKPACK.get().getDefaultInstance();
         var modules = modules(root);
         for (int i = 0; i < pouches.length; i++) modules.setItem(i, pouches[i]);
         p.getInventory().setItem(8, root);

@@ -51,6 +51,7 @@ public final class ClientEvents {
         event.register(ModMenus.BAG_MENU.get(), BagScreen::new);
         event.register(ModMenus.BAG_RADIAL_MENU.get(), BagRadialScreen::new);
         event.register(ModMenus.CRAFTING_STATION_MENU.get(), CraftingStationScreen::new);
+        event.register(ModMenus.POUCH_STATION_MENU.get(), PouchStationScreen::new);
         // Every other carried station reuses its vanilla panel. The station menus extend the
         // vanilla menus, so the vanilla screen already knows the slot layout and progress data.
         event.register(ModMenus.STONECUTTER_STATION.get(), StonecutterScreen::new);

@@ -21,7 +21,7 @@ import java.util.function.Consumer;
 public final class RadialTestSupport {
     private RadialTestSupport() {}
     public static ItemStack bag() {
-        return ModItems.LARGE_BAG.get().getDefaultInstance();
+        return ModItems.BACKPACK.get().getDefaultInstance();
     }
 
     public static ItemStack module() {
