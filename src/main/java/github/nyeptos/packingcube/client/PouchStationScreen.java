@@ -315,10 +315,8 @@ public final class PouchStationScreen extends AbstractContainerScreen<PouchStati
                         ROW_HOVER_ALPHA * frame.hover());
         } else if (frame.hover() > .001F)
             blitRow(graphics, ROW_HOVERED, left, top, ROW_HOVER_ALPHA * frame.hover());
-        if (frame.press() > .001F) {
-            ResourceLocation plate = present(ROW_PRESSED) ? ROW_PRESSED : ROW_HOVERED;
-            blitRow(graphics, plate, left, top, ROW_HOVER_ALPHA * frame.press());
-        }
+        if (frame.press() > .001F)
+            blitRow(graphics, ROW_HOVERED, left, top, ROW_HOVER_ALPHA * frame.press());
         graphics.renderItem(icon, left + 2, top + 4);
         graphics.drawString(font, name, left + 22, top + 3, ROW_TEXT, false);
         drawCost(graphics, left + 22, top + 13, recipe);
