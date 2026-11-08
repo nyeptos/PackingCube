@@ -1,0 +1,23 @@
+{
+  "type": "packingcube:pouch",
+  "materials": [
+    {
+      "count": 2,
+      "item": "minecraft:iron_ingot"
+    },
+    {
+      "count": 1,
+      "item": "minecraft:hopper"
+    },
+    {
+      "count": 1,
+      "item": "packingcube:storage_pouch"
+    },
+    {
+      "count": 1,
+      "item": "minecraft:redstone"
+    }
+  ],
+  "order": 20,
+  "result": "packingcube:refill_pouch"
+}
