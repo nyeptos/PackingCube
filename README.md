@@ -7,6 +7,10 @@ Instead of digging through chests and shuffling stacks, you configure the bag on
 each pouch accepts, which slot gets refilled, and which pouch wins when two of them want the same
 item.
 
+## Development
+
+A significant portion of this mod's code was written with the assistance of AI tools. Development involved iterative testing, debugging, and refinement.
+
 ## Requirements
 
 | | |
