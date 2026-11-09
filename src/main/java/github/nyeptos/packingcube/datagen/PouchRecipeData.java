@@ -16,7 +16,7 @@ public final class PouchRecipeData {
     public static void write(RecipeOutput output) {
         PouchRecipeBuilder.pouch(ModItems.STORAGE_POUCH.get())
                 .order(10)
-                .needs(Items.LEATHER, 5)
+                .needs(Items.LEATHER, 1)
                 .needs(Items.STRING, 2)
                 .needs(Items.CHEST)
                 .save(output, "pouch/storage_pouch");
@@ -38,7 +38,7 @@ public final class PouchRecipeData {
 
         PouchRecipeBuilder.pouch(ModItems.BACKPACK.get())
                 .order(40)
-                .needs(Items.LEATHER, 5)
+                .needs(Items.LEATHER, 2)
                 .needs(ModItems.STORAGE_POUCH.get(), 2)
                 .needs(Items.CHEST)
                 .save(output, "pouch/backpack");

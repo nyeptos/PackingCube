@@ -432,14 +432,6 @@ public final class PouchStationScreen extends AbstractContainerScreen<PouchStati
     private void drawColumn(GuiGraphics graphics) {
         int column = leftPos + PouchStationMenu.BUTTON_LEFT;
         int width = PouchStationMenu.BUTTON_WIDTH;
-        Component legend = Component.translatable("gui.packingcube.pouch_station.need_held");
-        graphics.drawString(
-                font,
-                legend,
-                leftPos + LEGEND_RIGHT - font.width(legend),
-                topPos + LEGEND_TOP,
-                TEXT_DIM,
-                false);
         Component label = Component.translatable("gui.packingcube.pouch_station.result");
         graphics.drawString(
                 font,
@@ -471,7 +463,7 @@ public final class PouchStationScreen extends AbstractContainerScreen<PouchStati
     private List<Component> bill(PouchRecipe recipe) {
         if (recipe == null) return null;
         List<Component> lines = new ArrayList<>();
-        lines.add(recipe.resultStack().getHoverName().copy().withStyle(ChatFormatting.BOLD));
+        lines.add(recipe.resultStack().getHoverName().copy());
         lines.add(
                 Component.translatable("gui.packingcube.pouch_station.need")
                         .withStyle(ChatFormatting.GRAY));

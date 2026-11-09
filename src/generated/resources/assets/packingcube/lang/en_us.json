@@ -1,5 +1,5 @@
 {
-  "block.packingcube.pouch_station": "Pouch Workbench",
+  "block.packingcube.pouch_station": "Pouch Station",
   "gui.packingcube.add_item": "Add this item",
   "gui.packingcube.allow": "Include",
   "gui.packingcube.back": "Back",
@@ -38,9 +38,8 @@
   "gui.packingcube.pouch_station.craft": "Craft",
   "gui.packingcube.pouch_station.craft_hint": "Press Craft to make this pouch",
   "gui.packingcube.pouch_station.from_inventory": "Materials come from your inventory",
-  "gui.packingcube.pouch_station.missing": "Short of materials",
+  "gui.packingcube.pouch_station.missing": "Missing",
   "gui.packingcube.pouch_station.need": "Needs",
-  "gui.packingcube.pouch_station.need_held": "Have / Need",
   "gui.packingcube.pouch_station.ready": "Ready",
   "gui.packingcube.pouch_station.result": "Result",
   "gui.packingcube.radial_cancel": "Choose a bag",

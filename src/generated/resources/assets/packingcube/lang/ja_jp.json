@@ -40,7 +40,6 @@
   "gui.packingcube.pouch_station.from_inventory": "素材はインベントリから使います",
   "gui.packingcube.pouch_station.missing": "素材不足",
   "gui.packingcube.pouch_station.need": "必要素材",
-  "gui.packingcube.pouch_station.need_held": "所持/必要",
   "gui.packingcube.pouch_station.ready": "素材OK",
   "gui.packingcube.pouch_station.result": "完成品",
   "gui.packingcube.radial_cancel": "バッグを選択",

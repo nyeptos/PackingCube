@@ -503,13 +503,12 @@ public final class ModLanguageProvider extends LanguageProvider {
                 "tooltip.packingcube.filter_include",
                 "Filter: Include (store matching items)",
                 "フィルター: 含む（一致するものを収納）");
-        translated("block.packingcube.pouch_station", "Pouch Workbench", "ポーチ製作台");
+        translated("block.packingcube.pouch_station", "Pouch Station", "ポーチ製作台");
         translated("gui.packingcube.pouch_station.need", "Needs", "必要素材");
         translated("gui.packingcube.pouch_station.ready", "Ready", "素材OK");
-        translated("gui.packingcube.pouch_station.missing", "Short of materials", "素材不足");
+        translated("gui.packingcube.pouch_station.missing", "Missing", "素材不足");
         translated("gui.packingcube.pouch_station.craft", "Craft", "製作");
         translated("gui.packingcube.pouch_station.result", "Result", "完成品");
-        translated("gui.packingcube.pouch_station.need_held", "Have / Need", "所持/必要");
         translated(
                 "gui.packingcube.pouch_station.from_inventory",
                 "Materials come from your inventory",
